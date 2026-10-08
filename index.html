@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5A0E18">
+<title>Isha Outreach Seva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body class="vol">
+<div class="bg" id="bg"><div class="bg-img" id="bgA"></div><div class="bg-img" id="bgB"></div><div class="bg-shade"></div></div>
+<div class="petals" id="petals" aria-hidden="true"></div>
+
+<!-- LOGIN -->
+<section class="screen login" id="login">
+  <a class="admin-link" href="admin.html">🔐 Admin login</a>
+  <div class="login-photo"><img src="img/hero.jpg" alt="Sadhguru offering Namaskaram"></div>
+  <div class="login-card">
+    <div class="namaskaram">🙏</div>
+    <h1>Namaskaram</h1>
+    <p class="sub"><span id="campTitle"></span><br><small id="sectorName"></small></p>
+    <label for="phoneIn">Enter your mobile number</label>
+    <input id="phoneIn" type="tel" inputmode="numeric" autocomplete="tel" maxlength="14" placeholder="10-digit mobile number">
+    <button class="btn primary big" id="loginBtn">Begin my Karma Sadhana 🌸</button>
+    <p class="err" id="loginErr"></p>
+    <blockquote class="quote" id="loginQuote"></blockquote>
+  </div>
+</section>
+
+<!-- CAMPAIGN PICKER -->
+<section class="screen pick hidden" id="pick">
+  <div class="login-card pick-card">
+    <div class="namaskaram">🌸</div>
+    <h1 id="pickHello">Namaskaram</h1>
+    <p class="sub">Choose your seva</p>
+    <div class="camp-list" id="pickList"></div>
+    <button class="btn ghost" id="pickOut">Log out</button>
+  </div>
+</section>
+
+<!-- WELCOME -->
+<div class="overlay welcome hidden" id="welcome">
+  <div class="welcome-box">
+    <img src="img/hero.jpg" alt="">
+    <div class="welcome-text">
+      <div class="small-caps">Namaskaram</div>
+      <h2 id="wName"></h2>
+      <p id="wLine"></p>
+      <blockquote class="quote light" id="wQuote"></blockquote>
+      <button class="btn primary big" id="wGo">Let's begin 🙏</button>
+    </div>
+  </div>
+</div>
+
+<!-- CELEBRATION -->
+<div class="overlay celebrate hidden" id="celebrate">
+  <canvas id="confetti"></canvas>
+  <div class="cel-box">
+    <img src="img/celebrate.jpg" alt="">
+    <div class="cel-emoji" id="celEmoji">👏</div>
+    <h2 id="celTitle"></h2>
+    <p id="celSub"></p>
+    <button class="btn primary big" id="celClose">Jai! Continue 🌸</button>
+  </div>
+</div>
+
+
+<!-- APP -->
+<main class="screen app hidden" id="app">
+  <header class="top">
+    <div class="me"><div class="avatar" id="avatar"></div><div><div class="hello">Namaskaram,</div><div class="myname" id="myName"></div></div></div>
+    <button class="icon-btn switch-btn hidden" id="switchBtn" title="Switch campaign">⇄ Switch</button>
+    <button class="icon-btn logout-btn" id="logoutBtn" aria-label="Log out" title="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>Logout</button>
+  </header>
+  <div class="ticker"><div class="ticker-track" id="ticker"></div></div>
+
+  <div class="views">
+    <section class="view" id="v-home">
+      <div class="card progress-card">
+        <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" class="ring-bg"/><circle cx="50" cy="50" r="42" class="ring-fg" id="ringFg"/></svg>
+        <div class="ring-text"><b id="ringNum">0/0</b><span>today</span></div>
+        <div class="prog-info">
+          <div class="prog-title" id="progTitle"></div>
+          <div class="prog-sub" id="progSub"></div>
+          <div class="pills"><span class="pill strong" id="todayLeft"></span><span class="pill strong" id="myLeft"></span><span class="pill" id="daysLeft"></span><span class="pill" id="myTotal"></span></div>
+          <div class="prog-sub" id="catchUp"></div>
+        </div>
+      </div>
+      <div class="card camp-progress"><div class="camp-bar"><i id="campFill"></i></div><small id="campText"></small></div>
+      <div id="introBanner"></div>
+      <div id="contactArea"></div>
+    </section>
+
+    <section class="view hidden" id="v-follow">
+      <div class="card"><h3 class="h3" id="fuHead">📌 My follow-ups</h3><p class="muted tiny" id="fuHelp">Everyone you have called, by result. Tap a tab, call, then choose what happened and tap Update.</p><div class="fu-tabs" id="fuTabs"></div><ul class="fu-list" id="fuList"></ul></div>
+    </section>
+
+  </div>
+
+  <nav class="tabs">
+    <button data-v="home" class="on"><span class="ti" id="tabMainIc">📞</span><span id="tabMainTx">Call</span></button>
+    <button data-v="follow"><span class="ti">📌</span><span id="tabListTx">Follow-ups<b id="fuCount"></b></span></button>
+  </nav>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/config.js?v=1"></script>
+<script src="js/core.js?v=1"></script>
+<script src="js/api.js?v=1"></script>
+<script src="js/fx.js?v=1"></script>
+<script src="js/volunteer.js?v=1"></script>
+</body>
+</html>

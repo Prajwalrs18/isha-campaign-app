@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#5A0E18">
+<title>Outreach Seva Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=1">
+<link rel="stylesheet" href="css/admin.css?v=1">
+</head>
+<body class="adm">
+<div class="bg"><div class="bg-img show" style="background-image:url(img/admin.jpg)"></div><div class="bg-shade"></div></div>
+
+<section class="screen a-login" id="aLogin">
+  <div class="login-card">
+    <div class="namaskaram">🙏</div>
+    <h1 class="a-h1">Outreach Seva Admin</h1>
+    <p class="sub">Call &amp; WhatsApp campaigns</p>
+    <input id="aPhone" type="tel" inputmode="numeric" placeholder="Your 10-digit mobile" autocomplete="tel">
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+    <button class="btn primary big" id="pwBtn">Log in</button>
+    <p class="err" id="pwErr"></p>
+    <p class="demo-note hidden" id="aDemo">Demo mode · any mobile number + main password isha@123</p>
+    <p class="demo-note"><a href="index.html">← Back to volunteer page</a></p>
+  </div>
+</section>
+
+<main class="a-app hidden" id="aCamps">
+  <header class="a-top">
+    <div><div class="small-caps">Outreach Seva Admin</div><div class="a-title">Campaigns</div><div class="me-line" id="meLine"></div></div>
+    <div class="a-top-r"><button class="icon-btn logout-btn" id="cOut" title="Log out">Logout</button></div>
+  </header>
+  <section class="a-view">
+    <div class="card"><h3 class="h3">Your campaigns</h3><div class="camp-list" id="campList"></div></div>
+    <div class="card hidden" id="adminsCard">
+      <h3 class="h3">👥 Admins</h3>
+      <p class="muted tiny">Only you (main admin) can see this. Each admin logs in with their own mobile number and password.</p>
+      <div class="tbl-wrap"><table class="tbl" id="adminsTbl"></table></div>
+      <h3 class="h3" id="adTitle" style="margin-top:16px">➕ Add an admin</h3>
+      <div class="form">
+        <label>Name<input id="adName" placeholder="Admin name"></label>
+        <label>Mobile number<input id="adPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile"></label>
+        <label>Password<input id="adPw" placeholder="At least 4 characters"></label>
+        <label>Can manage<select id="adAccess"><option value="whatsapp">💬 WhatsApp campaigns only</option><option value="call">📞 Call campaigns only</option><option value="both">Both</option></select></label>
+        <label class="full hidden" id="adActiveRow"><span><input type="checkbox" id="adActive" checked> Active (can log in)</span></label>
+      </div>
+      <div class="row2"><button class="btn ghost hidden" id="adCancel">Cancel</button><button class="btn primary big" id="adSave">Add admin</button></div>
+    </div>
+    <div class="card" id="campFormCard">
+      <h3 class="h3" id="kTitle">➕ New campaign</h3>
+      <div class="form">
+        <label class="full">Campaign name<input id="kName" placeholder="e.g. IE WhatsApp – Nov 2026"></label>
+        <label>Type<select id="kType"><option value="whatsapp">💬 WhatsApp messages</option><option value="call">📞 Phone calls</option></select></label>
+        <label><span id="kPerLbl">Messages per volunteer per day</span><input id="kPer" type="number" min="1" value="30"></label>
+        <label>Start date<input id="kStart" type="date"></label>
+        <label>End date<input id="kEnd" type="date"></label>
+        <label class="full k-wa">WhatsApp message <span class="muted tiny">({name} = contact's first name, {caller} = volunteer's first name)</span><textarea id="kMsg" rows="8" placeholder="Namaskaram {name} 🙏 …"></textarea></label>
+        <label class="k-call hidden">Intro date (optional)<input id="kIntro" type="date"></label>
+        <label class="k-call hidden">Intro time (optional)<input id="kIntroT" placeholder="e.g. 6–7 AM"></label>
+        <div class="full k-vols" id="kVolsBox">
+          <div class="k-vols-head"><b>Add existing volunteers (optional)<span id="kCount"></span></b><button type="button" class="mini" id="kAll">Select all</button></div>
+          <input id="kVolQ" placeholder="Search name / phone">
+          <div class="k-vols-list" id="kVols"></div>
+          <p class="muted tiny" style="margin:6px 0 0">They get their contacts automatically when you upload this campaign's list. You can add new volunteers later too.</p>
+        </div>
+        <label class="full hidden" id="kActiveRow"><span><input type="checkbox" id="kActive" checked> Active (volunteers can see it)</span></label>
+      </div>
+      <p class="muted tiny" id="kCalc"></p>
+      <div class="row2"><button class="btn ghost hidden" id="kCancel">Cancel</button><button class="btn primary big" id="kSave">Create campaign</button></div>
+    </div>
+  </section>
+</main>
+
+<main class="a-app hidden" id="aApp">
+  <header class="a-top">
+    <div><div class="small-caps">Outreach Seva Admin</div><div class="a-title" id="aTitle"></div></div>
+    <div class="a-top-r"><button class="icon-btn switch-btn" id="toCamps" title="All campaigns">⇄ Campaigns</button><button class="icon-btn" id="refresh" title="Refresh" aria-label="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button><button class="icon-btn logout-btn" id="aOut" title="Log out" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>Logout</button></div>
+  </header>
+  <nav class="a-tabs">
+    <button data-t="callers" class="on">Volunteers</button><button data-t="dash">Dashboard</button>
+    <button data-t="contacts">Contacts</button><button data-t="upload">Add contacts</button>
+  </nav>
+
+  <section class="a-view hidden" id="t-dash">
+    <div class="a-kpis" id="kpis"></div>
+    <div class="card"><h3 class="h3">📣 Daily message for the volunteer group</h3>
+      <p class="muted">Post this in the WhatsApp group every morning to thank and motivate the volunteers.</p>
+      <div class="filters" style="grid-template-columns:1fr 1fr"><button class="btn ghost" id="sumYday">Yesterday</button><button class="btn ghost" id="sumToday">Today so far</button></div>
+      <textarea id="sumText" rows="9" style="margin:10px 0"></textarea>
+      <div class="row2"><button class="btn ghost" id="sumCopy">Copy</button><button class="btn wa" id="sumWa">Share on WhatsApp</button></div>
+    </div>
+    <div class="card"><h3 class="h3">People not reached</h3><p class="muted">Everyone we have not reached yet: not contacted, didn't receive, no WhatsApp, or wrong number.</p><button class="btn primary big" id="dlNotReached">⬇ Download not-reached list (CSV)</button></div>
+    <div class="card"><h3 class="h3">Outcomes</h3><div class="bars" id="bars"></div></div>
+    <div class="card"><h3 class="h3">Volunteers today</h3><div class="tbl-wrap"><table class="tbl" id="dashCallers"></table></div></div>
+    <div class="card"><h3 class="h3">🗂️ Admin activity</h3><p class="muted tiny">Who created, uploaded, added volunteers or assigned contacts in this campaign.</p><ul class="feed" id="adminAct"></ul></div>
+    <div class="card"><h3 class="h3">Recent activity</h3><ul class="feed" id="recent"></ul></div>
+  </section>
+
+  <section class="a-view" id="t-callers">
+    <div class="card">
+      <h3 class="h3">Add a volunteer</h3>
+      <p class="muted" id="poolInfo"></p>
+      <div class="form">
+        <label class="full">Pick someone who volunteered before (optional)<select id="cPick"></select></label>
+        <label>Name<input id="cName" placeholder="Volunteer name"></label>
+        <label>Phone number<input id="cPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile"></label>
+        <label><span class="perLbl">Per day</span><input id="cPer" type="number" min="1"></label>
+        <label>Number of days<input id="cDays" type="number" min="0" placeholder="Auto"></label>
+      </div>
+      <p class="muted tiny" id="assignPreview" style="margin:-4px 0 12px"></p>
+      <button class="btn primary big" id="cSave">Add volunteer & assign contacts</button>
+      <p class="muted tiny" style="margin-top:10px">Contacts are taken automatically from this campaign's list (per day × days). The volunteer logs in with this phone number and sees every campaign they are part of. Same number again = update.</p>
+    </div>
+    <div class="card"><h3 class="h3">All volunteers</h3><p class="muted tiny" style="margin:0 0 10px">Each volunteer holds per day × days left contacts. <button class="btn ghost" id="syncAll" style="padding:6px 12px;font-size:13px">🔄 Sync all volunteers</button></p><div class="tbl-wrap"><table class="tbl" id="callersTbl"></table></div></div>
+  </section>
+
+  <section class="a-view hidden" id="t-contacts">
+    <div class="card">
+      <div class="filters">
+        <input id="q" placeholder="Search name / phone / program">
+        <select id="fStatus"></select>
+      </div>
+      <div class="bulk">
+        <span id="selCount">0 selected</span>
+        <select id="bulkTo"></select>
+        <button class="btn primary" id="bulkAssign">Assign</button>
+        <button class="btn ghost" id="bulkReset" title="Mark as not called and put back in the pool">Call again</button>
+        <button class="btn ghost" id="dlCsv">Download CSV</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl" id="contactsTbl"></table></div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </section>
+
+  <section class="a-view hidden" id="t-upload">
+    <div class="card">
+      <h3 class="h3">Upload contacts</h3>
+      <p class="muted">CSV or Excel. Columns are detected automatically: <b>Name</b>, <b>Phone</b>, <b>Email</b>, <b>Programs</b>. Duplicates (same phone) are merged — programs are combined, nobody is added twice.</p>
+      <div class="form">
+        <label class="full">File<input id="uFile" type="file" accept=".csv,.xlsx,.xls"></label>
+        <label>Program name for this file (optional)<input id="uProg" placeholder="e.g. Shivanga"></label>
+        <label>Give these contacts to<select id="uFor"></select></label>
+      </div>
+      <div class="form hidden" id="uNew">
+        <label>New caller's name<input id="nName" placeholder="Volunteer name"></label>
+        <label>Phone number<input id="nPhone" type="tel" inputmode="numeric" placeholder="10-digit mobile"></label>
+        <label><span class="perLbl">Per day</span><input id="nPer" type="number" min="1"></label>
+        <label>Number of days<input id="nDays" type="number" min="0" placeholder="Auto"></label>
+      </div>
+      <div id="uPreview" class="muted"></div>
+      <button class="btn primary big" id="uGo" disabled>Upload</button>
+      <p id="uResult" class="ok"></p>
+    </div>
+  </section>
+</main>
+
+<div class="overlay sheet-wrap hidden" id="editWrap">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 id="eTitle"></h3>
+    <div class="form">
+      <label>Name<input id="eName" placeholder="Volunteer name"></label>
+      <label>Phone number<input id="ePhone" type="tel" inputmode="numeric" placeholder="10-digit mobile"></label>
+      <label>Per day<input id="ePer" type="number" min="1"></label>
+      <label>Days left<input id="eDays" type="number" min="0"></label>
+      <label class="full"><span><input type="checkbox" id="eActive"> Active</span></label>
+    </div>
+    <div class="row2"><button class="btn ghost" id="eCancel">Cancel</button><button class="btn primary" id="eSave">Save</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="js/config.js?v=1"></script>
+<script src="js/core.js?v=1"></script>
+<script src="js/api.js?v=1"></script>
+<script src="js/admin.js?v=1"></script>
+</body>
+</html>
