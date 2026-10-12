@@ -120,7 +120,7 @@
     if (!S.fuHelp) S.fuHelp = $('#fuHelp').textContent;
     $('#fuHead').textContent = S.isWA ? '📋 My list' : '📌 My follow-ups';
     $('#fuHelp').textContent = S.isWA ? 'Everyone you have messaged, by result. You can message again or change the result here.' : S.fuHelp;
-    S.sel = null; S.note = ''; S.fuTabPicked = false;
+    S.sel = null; S.note = ''; S.fuTabPicked = false; S.shownId = null;
     return api('state', withCamp()).then(function (st) {
       S.st = st; LS.set('icc_camp_' + S.phone, c.id);
       S.lastSeen = LS.get('icc_lastSeen_' + S.phone + '_' + c.id) || (st.feed[0] && st.feed[0].ts) || new Date().toISOString();
@@ -203,7 +203,11 @@
 
   function renderContact() {
     var st = S.st, area = $('#contactArea');
-    if (st.inHand.length && S.isWA) return renderWaContact(st.inHand[0]);
+    if (S.isWA) {   // first person in hand that this phone hasn't already marked
+      var nx = st.inHand.filter(function (x) { return !S.marked[x.id]; })[0];
+      if (nx) return renderWaContact(nx);
+      if (S.inflight) { S.shownId = null; area.innerHTML = '<div class="card contact wa-card"><p class="muted" style="text-align:center;margin:30px 0">🌸 Getting the next person…</p></div>'; return; }
+    }
     if (st.inHand.length) {
       var c = st.inHand[0];
       var progs = String(c.programs || '').split(',').map(function (s) { return s.trim(); }).filter(String);
@@ -264,6 +268,8 @@
 
   /* WhatsApp campaign: one person at a time — open WhatsApp, send, tap the result (saves straight away) */
   function renderWaContact(c) {
+    if (S.shownId === c.id && $('#contactArea .wa-card #grid')) return;   // same person still on screen: don't redraw
+    S.shownId = c.id;
     var st = S.st, progs = String(c.programs || '').split(',').map(function (s) { return s.trim(); }).filter(String);
     $('#contactArea').innerHTML =
       '<div class="card contact wa-card">' +
@@ -276,10 +282,34 @@
       '<div class="how">After sending, tap what happened 👇</div>' +
       '<div class="status-grid wa-grid" id="grid">' + statusButtons(null) + '</div>' +
       '</div>';
+    var open = $('#contactArea .wa-open'); if (open) open.onclick = function () { S.opened[c.id] = 1; };
     $('#grid').onclick = function (e) {
       var b = e.target.closest('.sbtn'); if (!b) return;
-      b.classList.add('on'); FX.buzz(15); save(c.id, b.dataset.s, '');
+      if (c.phone && !S.opened[c.id]) { FX.buzz([30, 40, 30]); return toast('📲 Please open WhatsApp and send the message first 🙏', 2600); }
+      FX.buzz(15); saveWa(c.id, b.dataset.s);
     };
+  }
+
+  /* WhatsApp: move to the next person at once, save in the background (one after another) */
+  S.marked = {}; S.opened = {}; S.inflight = 0; S.chain = Promise.resolve();
+  function saveWa(id, status) {
+    S.marked[id] = 1; S.inflight++;
+    var t = S.st.today; t.done++; t.dials++; S.st.left = Math.max(0, (S.st.left || 0) - 1);
+    if (S.st.camp) S.st.camp.done++;
+    render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    S.chain = S.chain.then(function () {
+      var prevTotal = S.st.stats.total; S.prevLeft = S.st.left + 1;
+      return api('submit', withCamp({ contactId: id, status: status, notes: '' })).then(function (st) {
+        S.inflight--;
+        if (S.inflight) { st.today = S.st.today; st.left = S.st.left; st.camp = S.st.camp; }   // keep the faster local counts while more saves are queued
+        S.st = st; render(); celebrateOwn(st.saved, st.milestone, prevTotal);
+      }).catch(function (e) {
+        S.inflight--;
+        if (numberGone(e)) return;
+        toast('⚠️ Not saved: ' + e.message, 4000); delete S.marked[id];
+        return api('state', withCamp()).then(function (st) { S.st = st; S.shownId = null; render(); }).catch(function () {});
+      });
+    });
   }
 
   function numberGone(e) {   // admin changed or removed this number
@@ -441,7 +471,7 @@
   /* misc */
   $('#logoutBtn').onclick = function () { LS.set('icc_phone', null); location.reload(); };
   document.addEventListener('visibilitychange', function () {  // coming back from the dialer: refresh
-    if (!document.hidden && S.st && S.camp && !S.busy && !$('#app').classList.contains('hidden')) api('state', withCamp()).then(function (st) { S.st = st; render(); }).catch(numberGone);
+    if (!document.hidden && S.st && S.camp && !S.busy && !S.inflight && !$('#app').classList.contains('hidden')) api('state', withCamp()).then(function (st) { S.st = st; render(); }).catch(numberGone);
   });
 
   initLogin();

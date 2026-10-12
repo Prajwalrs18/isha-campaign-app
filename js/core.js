@@ -146,16 +146,21 @@ function createCore(store, camp) {
     var inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === phone; });
     var over = !cv.active || cv.daysLeft <= 0, poolEmpty = false;
 
-    if (!inHand.length && !over && !cv.notStarted && (done < cv.perDay || p.extra)) {
+    // WhatsApp: keep the NEXT person ready too, so the volunteer's screen moves on instantly after each tap
+    var want = camp.type === 'whatsapp' ? 2 : 1;
+    var room = function () { return done + inHand.length < cv.perDay || (p.extra && !inHand.length); };
+    if (inHand.length < want && !over && !cv.notStarted && room()) {
       var cands = contacts.filter(function (x) { return eligible(x, phone); });
       cands.sort(function (a, b) { return rank(a, phone) - rank(b, phone) || a._i - b._i; });
-      if (cands.length) {
-        var pick = cands[0];
+      if (!cands.length && !inHand.length) poolEmpty = true;
+      while (inHand.length < want && cands.length && room()) {
+        var pick = cands.shift();
         pick.assignedTo = phone; pick.assignedAt = now();
         store.update('Contacts', pick);
-        inHand = [pick];
-      } else poolEmpty = true;
+        inHand.push(pick);
+      }
     }
+    inHand.sort(function (a, b) { return String(a.assignedAt).localeCompare(String(b.assignedAt)) || a._i - b._i; });
     var byId = {};
     contacts.forEach(function (x) { byId[x.id] = x; });
     var seen = {}, history = [];
