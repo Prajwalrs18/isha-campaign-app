@@ -15,7 +15,7 @@ A phone-first web app for volunteers, plus an admin page. Data lives in a **new*
    - Each volunteer sees what's left today, what's left in their list, and how far the whole team has got.
 
 ## Admins
-- **Main admin**: log in with your mobile number and the main password (`ADMIN_PASSWORD`, or `isha@123` in demo mode). Only the main admin sees the **👥 Admins** card, where you add other admins with a name, mobile, password and access: **WhatsApp only**, **Calls only**, or **Both**.
+- **Main admin**: log in with **9113947684** (set as `MAIN_ADMIN_PHONE` in `js/core.js`) and the main password (Script property `ADMIN_PASSWORD`; `isha@123` in demo mode). Only the main admin sees the **👥 Admins** card, where you add other admins with a name, mobile, password and access: **WhatsApp only**, **Calls only**, or **Both**.
 - Add yourself to the Admins list too, so the activity record shows your name instead of "Main admin".
 - Admins only see, create and manage campaigns of their type.
 - Every admin action is recorded with the admin's name (created campaign, uploaded contacts, added volunteer, assigned contacts). You'll find it under Dashboard → **🗂️ Admin activity**, and the **Added by** column shows who added each volunteer. The full record is in the `AdminLog` tab of the Sheet.
@@ -24,7 +24,7 @@ A phone-first web app for volunteers, plus an admin page. Data lives in a **new*
 ## 1. Try it on localhost (DEMO mode)
 1. Leave `API_URL` empty in `js/config.js`.
 2. Double-click `start-local.bat` (it needs Python).
-3. Open http://localhost:8080/admin.html, log in with any mobile number and password `isha@123`, create a campaign, upload contacts and add yourself as a volunteer.
+3. Open http://localhost:8080/admin.html, log in with 9113947684 and password `isha@123`, create a campaign, upload contacts and add yourself as a volunteer.
 4. Open http://localhost:8080/ and log in with that number.
 
 **Practice mode:** open `index.html?test=1` and log in with your own number. You get a practice call campaign and a practice WhatsApp campaign whose contacts are your own number.
@@ -33,7 +33,7 @@ A phone-first web app for volunteers, plus an admin page. Data lives in a **new*
 1. Create a **new** Google Sheet, for example "Outreach Seva". Do **not** reuse the calling app's Sheet.
 2. Open Extensions → Apps Script, and replace everything in `Code.gs` with `apps-script/PASTE_THIS_IN_APPS_SCRIPT.gs`.
 3. Run `setup` once and allow permissions. This creates the **Campaigns**, **Admins** and **AdminLog** tabs. Each campaign gets its own `Contacts_K1`, `Callers_K1` and `Log_K1` tabs automatically.
-4. Change the admin password: Project Settings → Script properties → `ADMIN_PASSWORD`.
+4. Set the main password: Project Settings → Script properties → Add property `ADMIN_PASSWORD` with your password. It is kept only there, never in the code (this repo is public). Without it, the main admin can't log in.
 5. Deploy → New deployment → **Web app**. Set Execute as **Me** and Who has access **Anyone**, then copy the URL.
 6. Paste that URL into `js/config.js` as `API_URL`.
 
