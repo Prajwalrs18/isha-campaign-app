@@ -506,13 +506,14 @@ function myCampaigns(store, phone) {
 
 /* ---------------- ADMINS ---------------- */
 // The main admin logs in with the master password (Script property ADMIN_PASSWORD). Other admins are rows in the Admins tab.
+var MAIN_ADMIN_PHONE = '9113947684';   // only this number can log in as main admin
 function canSee(admin, type) { return admin.main || admin.access === 'both' || admin.access === type; }
 function adminLogin(store, auth, p) {
   var phone = normPhone(p.phone), pw = String(p.password || '');
   if (phone.length !== 10) throw new Error('Enter your 10-digit mobile number');
   var row = store.all('Admins').filter(function (a) { return normPhone(a.phone) === phone; })[0];
   var admin;
-  if (auth.master(pw)) admin = { name: row ? row.name : 'Main admin', phone: phone, access: 'both', main: true };
+  if (phone === MAIN_ADMIN_PHONE && auth.master(pw)) admin = { name: row ? row.name : 'Main admin', phone: phone, access: 'both', main: true };
   else if (row && String(row.active) !== 'false' && pw && String(row.password) === pw)
     admin = { name: row.name, phone: phone, access: row.access || 'both', main: false };
   else throw new Error('Wrong phone number or password');
