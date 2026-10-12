@@ -17,7 +17,7 @@ var STATUS = {
 };
 // WhatsApp message campaigns use these instead
 var WA_STATUS = {
-  sent:         { label: 'Sent',         emoji: '✅', good: true },
+  sent:         { label: 'Sent',         emoji: '📤', good: true },
   wrong_number: { label: 'Wrong number', emoji: '❌' },
   no_whatsapp:  { label: 'No WhatsApp',  emoji: '🚫' }
 };
