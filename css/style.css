@@ -257,10 +257,12 @@ textarea { width: 100%; min-height: 64px; border-radius: 12px; border: 1.5px sol
 .camp-bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, var(--gold), var(--saffron)); transition: width .8s ease; }
 .camp-progress small { color: var(--muted); font-weight: 500; }
 .btn.wa-open { margin-top: 4px; font-size: 18px; }
-.wa-grid { grid-template-columns: 1fr 1fr 1fr; }
+.wa-grid { grid-template-columns: 1fr 1fr; }
 .wa-grid .sbtn { flex-direction: column; min-height: 72px; font-size: 13px; }
 .wa-grid .sbtn .e { font-size: 24px; }
-.wa-grid .sbtn[data-s="sent"] { border-color: var(--wa); background: #E9F8EF; font-weight: 700; color: #136B34; }
+/* Sent = one big button on its own row; plain white until tapped so it never looks "already done" */
+.wa-grid .sbtn[data-s="sent"] { grid-column: 1 / -1; flex-direction: row; min-height: 64px; font-size: 18px; font-weight: 700; border: 2px solid var(--wa); background: #fff; color: #136B34; }
+.wa-grid .sbtn[data-s="sent"] .e { font-size: 26px; }
 /* WhatsApp campaigns get a green accent */
 .wa-mode .ring-fg { stroke: var(--wa); }
 .wa-mode .pill.strong { background: #178A43; }
