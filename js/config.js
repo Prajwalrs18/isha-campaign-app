@@ -2,7 +2,7 @@
 window.CONFIG = {
   // Paste your Google Apps Script "Web app" URL here (see README).
   // Leave EMPTY to run in DEMO mode: data stays only in this browser (good for testing on localhost).
-  API_URL: '',   // NEW Sheet's URL goes here — never the old calling app's URL
+  API_URL: 'https://script.google.com/macros/s/AKfycbwI4zsNWU1xrkDKSUDX0TtuD4c2tgQIhqTmyJxq5hvffnDHuquDUmks4PyaYyfQj9b5/exec',   // the Outreach Seva Sheet
 
   // Only used in DEMO mode. With the Google Sheet, the password is set in Apps Script (see README).
   DEMO_ADMIN_PASSWORD: 'isha@123',
