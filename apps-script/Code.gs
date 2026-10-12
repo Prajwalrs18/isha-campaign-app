@@ -48,7 +48,8 @@ var SheetStore = {
   }
 };
 var SheetAuth = {   // a login lasts 6 hours
-  master: function (pw) { return !!pw && pw === (PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD') || 'isha@123'); },
+  // the main password lives ONLY in Script properties (ADMIN_PASSWORD), never in this code, because the repo is public
+  master: function (pw) { var m = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD'); return !!m && !!pw && pw === m; },
   issue: function (admin) { var t = Utilities.getUuid(); CacheService.getScriptCache().put('adm_' + t, JSON.stringify(admin), 21600); return t; },
   verify: function (t) { var v = t && CacheService.getScriptCache().get('adm_' + t); try { return v ? JSON.parse(v) : null; } catch (e) { return null; } }
 };
@@ -75,6 +76,6 @@ function doGet() { return ContentService.createTextOutput('Isha Campaign Seva AP
 function setup() {
   sheet_('Campaigns'); sheet_('Admins'); sheet_('AdminLog');
   if (!PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD'))
-    PropertiesService.getScriptProperties().setProperty('ADMIN_PASSWORD', 'isha@123');
-  Logger.log('Sheets ready. Admin password is in Project Settings > Script properties > ADMIN_PASSWORD');
+    Logger.log('Now set your main password: Project Settings > Script properties > Add ADMIN_PASSWORD');
+  else Logger.log('Sheets ready.');
 }

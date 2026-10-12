@@ -49,7 +49,8 @@ var SheetStore = {
   }
 };
 var SheetAuth = {   // a login lasts 6 hours
-  master: function (pw) { return !!pw && pw === (PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD') || 'isha@123'); },
+  // the main password lives ONLY in Script properties (ADMIN_PASSWORD), never in this code, because the repo is public
+  master: function (pw) { var m = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD'); return !!m && !!pw && pw === m; },
   issue: function (admin) { var t = Utilities.getUuid(); CacheService.getScriptCache().put('adm_' + t, JSON.stringify(admin), 21600); return t; },
   verify: function (t) { var v = t && CacheService.getScriptCache().get('adm_' + t); try { return v ? JSON.parse(v) : null; } catch (e) { return null; } }
 };
@@ -76,8 +77,8 @@ function doGet() { return ContentService.createTextOutput('Isha Campaign Seva AP
 function setup() {
   sheet_('Campaigns'); sheet_('Admins'); sheet_('AdminLog');
   if (!PropertiesService.getScriptProperties().getProperty('ADMIN_PASSWORD'))
-    PropertiesService.getScriptProperties().setProperty('ADMIN_PASSWORD', 'isha@123');
-  Logger.log('Sheets ready. Admin password is in Project Settings > Script properties > ADMIN_PASSWORD');
+    Logger.log('Now set your main password: Project Settings > Script properties > Add ADMIN_PASSWORD');
+  else Logger.log('Sheets ready.');
 }
 
 /* Isha Campaign Seva (calls + WhatsApp) — shared backend logic.
@@ -588,13 +589,14 @@ function myCampaigns(store, phone) {
 
 /* ---------------- ADMINS ---------------- */
 // The main admin logs in with the master password (Script property ADMIN_PASSWORD). Other admins are rows in the Admins tab.
+var MAIN_ADMIN_PHONE = '9113947684';   // only this number can log in as main admin
 function canSee(admin, type) { return admin.main || admin.access === 'both' || admin.access === type; }
 function adminLogin(store, auth, p) {
   var phone = normPhone(p.phone), pw = String(p.password || '');
   if (phone.length !== 10) throw new Error('Enter your 10-digit mobile number');
   var row = store.all('Admins').filter(function (a) { return normPhone(a.phone) === phone; })[0];
   var admin;
-  if (auth.master(pw)) admin = { name: row ? row.name : 'Main admin', phone: phone, access: 'both', main: true };
+  if (phone === MAIN_ADMIN_PHONE && auth.master(pw)) admin = { name: row ? row.name : 'Main admin', phone: phone, access: 'both', main: true };
   else if (row && String(row.active) !== 'false' && pw && String(row.password) === pw)
     admin = { name: row.name, phone: phone, access: row.access || 'both', main: false };
   else throw new Error('Wrong phone number or password');
