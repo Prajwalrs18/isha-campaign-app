@@ -153,6 +153,7 @@ function createCore(store, camp) {
       var cands = contacts.filter(function (x) { return eligible(x, phone); });
       cands.sort(function (a, b) { return rank(a, phone) - rank(b, phone) || a._i - b._i; });
       if (!cands.length && !inHand.length) poolEmpty = true;
+      if (cands.length && p._noAssign) throw new Error('NEED_LOCK');   // a new contact must be handed out: retry inside the lock
       while (inHand.length < want && cands.length && room()) {
         var pick = cands.shift();
         pick.assignedTo = phone; pick.assignedAt = now();

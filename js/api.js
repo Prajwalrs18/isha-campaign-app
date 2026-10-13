@@ -67,12 +67,12 @@
         .then(function (r) { return r.text(); })
         .then(function (t) {
           var res; try { res = JSON.parse(t); } catch (e) { var er = new Error('bad'); er.retry = true; throw er; }
-          if (!res.ok) throw new Error(res.error || 'Server error');
+          if (!res.ok) { var se = new Error(res.error || 'Server error'); se.retry = /lock|too long|timed out|too many times|try again/i.test(se.message); throw se; }
           return res.data;
         })
         .catch(function (e) {
           var transient = e.retry || e instanceof TypeError;
-          if (transient && n < 4) return new Promise(function (ok) { setTimeout(ok, 700 * n); }).then(function () { return attempt(n + 1); });
+          if (transient && n < 5) return new Promise(function (ok) { setTimeout(ok, 800 * n + Math.random() * 1200); }).then(function () { return attempt(n + 1); });
           if (transient) throw new Error('The connection is slow right now. Please tap again 🙏');
           throw e;
         });

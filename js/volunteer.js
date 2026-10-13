@@ -471,6 +471,7 @@
   /* misc */
   $('#logoutBtn').onclick = function () { LS.set('icc_phone', null); location.reload(); };
   document.addEventListener('visibilitychange', function () {  // coming back from the dialer: refresh
+    if (S.isWA && S.shownId) return;   // WhatsApp: the next person is already loaded, no need to ask the sheet again
     if (!document.hidden && S.st && S.camp && !S.busy && !S.inflight && !$('#app').classList.contains('hidden')) api('state', withCamp()).then(function (st) { S.st = st; render(); }).catch(numberGone);
   });
 
