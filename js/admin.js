@@ -232,7 +232,7 @@
   };
   $('#sumWa').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent($('#sumText').value), '_blank'); };
 
-  function renderAll() { if (!A.sumDay) showSummary(addDays(istDay(), -1)); renderDash(); loadActivity(); renderCallers(); renderContacts(); updatePreview(); fillCallerSelects(); }
+  function renderAll() { if (!A.sumDay) showSummary(addDays(istDay(), -1)); renderDash(); renderDayReport(); loadActivity(); renderCallers(); renderContacts(); updatePreview(); fillCallerSelects(); }
   function callerName(p) { var c = A.d.callers.filter(function (x) { return x.phone === p; })[0]; return c ? c.name : p; }
 
   function loadActivity() {
@@ -242,6 +242,52 @@
       }).join('') || '<li class="empty">Nothing yet</li>';
     }).catch(function () {});
   }
+
+  /* day-wise report: what each volunteer did on any day, or in total */
+  (function () {
+    var card = document.createElement('div'); card.className = 'card'; card.id = 'dayCard';
+    card.innerHTML = '<h3 class="h3">📅 Day-wise volunteer report</h3>' +
+      '<div class="filters" style="grid-template-columns:1fr auto"><select id="dayPick"></select><button class="btn ghost" id="dayCsv">⬇ CSV (all days)</button></div>' +
+      '<div class="tbl-wrap"><table class="tbl" id="dayTbl"></table></div>';
+    $('#kpis').insertAdjacentElement('afterend', card);
+  })();
+  function renderDayReport() {
+    var daily = A.d.daily || {}, days = Object.keys(daily).sort().reverse(), pick = $('#dayPick'), keep = pick.value;
+    pick.innerHTML = '<option value="all">All days (total)</option>' + days.map(function (d) {
+      return '<option value="' + d + '">' + shortDay(d) + (d === istDay() ? ' (today)' : d === addDays(istDay(), -1) ? ' (yesterday)' : '') + '</option>';
+    }).join('');
+    pick.value = keep && (keep === 'all' || daily[keep]) ? keep : (days[0] || 'all');
+    var sel = pick.value, sum = {}, vols = A.d.callers.map(function (v) { return v.phone; });
+    (sel === 'all' ? days : [sel]).forEach(function (d) {
+      var bv = (daily[d] && daily[d].byVol) || {};
+      Object.keys(bv).forEach(function (p) {
+        var s = sum[p] || (sum[p] = { done: 0, reached: 0, days: 0 });
+        s.done += bv[p].done; s.reached += bv[p].reached; s.days++;
+        if (vols.indexOf(p) < 0) vols.push(p);
+      });
+    });
+    var rows = vols.map(function (p) { return { p: p, s: sum[p] || { done: 0, reached: 0, days: 0 } }; })
+      .sort(function (a, b) { return b.s.done - a.s.done; });
+    var tot = rows.reduce(function (t, r) { t.done += r.s.done; t.reached += r.s.reached; return t; }, { done: 0, reached: 0 });
+    $('#dayTbl').innerHTML = '<tr><th>Volunteer</th><th class="num">' + (isWA ? 'Messages' : 'Calls') + '</th><th class="num">' + (isWA ? 'Sent 📤' : 'Spoke to') + '</th>' +
+      (sel === 'all' ? '<th class="num">Active days</th>' : '') + '</tr>' +
+      rows.map(function (r) {
+        return '<tr class="' + (r.s.done ? '' : 'off') + '"><td><b>' + esc(callerName(r.p)) + '</b></td><td class="num">' + r.s.done + '</td><td class="num">' + r.s.reached + '</td>' +
+          (sel === 'all' ? '<td class="num">' + r.s.days + '</td>' : '') + '</tr>';
+      }).join('') +
+      '<tr><td><b>Team total</b></td><td class="num"><b>' + tot.done + '</b></td><td class="num"><b>' + tot.reached + '</b></td>' + (sel === 'all' ? '<td></td>' : '') + '</tr>';
+  }
+  $('#dayPick').onchange = renderDayReport;
+  $('#dayCsv').onclick = function () {
+    var daily = A.d.daily || {}, lines = ['Date,Volunteer,Phone,' + (isWA ? 'Messages,Sent' : 'Calls,Spoke to')];
+    Object.keys(daily).sort().forEach(function (d) {
+      var bv = daily[d].byVol || {};
+      Object.keys(bv).forEach(function (p) { lines.push([d, '"' + String(callerName(p)).replace(/"/g, '""') + '"', p, bv[p].done, bv[p].reached].join(',')); });
+    });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv' }));
+    a.download = A.camp.name.replace(/[^\w-]+/g, '-') + '-daywise-' + istDay() + '.csv'; a.click();
+  };
 
   /* dashboard */
   function renderDash() {
