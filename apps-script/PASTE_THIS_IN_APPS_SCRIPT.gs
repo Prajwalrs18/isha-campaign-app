@@ -349,9 +349,13 @@ function createCore(store, camp) {
     var names = {}, out = {};
     callers.forEach(function (c) { names[normPhone(c.phone)] = firstName(c.name); });
     log.forEach(function (l) {
-      var d = istDay(l.ts), o = out[d] || (out[d] = { calls: 0, connects: 0, intros: 0, regs: 0, extra: {}, regBy: {} });
+      var d = istDay(l.ts), o = out[d] || (out[d] = { calls: 0, connects: 0, intros: 0, regs: 0, extra: {}, regBy: {}, byVol: {} });
       var who = names[normPhone(l.callerPhone)] || firstName(l.callerName);
       if (isCall(l)) { o.calls++; if (!missed(l.status)) o.connects++; }
+      if (isCall(l)) {   // per volunteer, per day: everyone handled, and how many actually reached
+        var vp = normPhone(l.callerPhone), v = o.byVol[vp] || (o.byVol[vp] = { done: 0, reached: 0 });
+        v.done++; if (!missed(l.status)) v.reached++;
+      }
       if (l.status === 'intro') o.intros++;
       if (l.status === 'registered') { o.regs++; o.regBy[who] = 1; }
       if (l.milestone === 'extra') o.extra[who] = 1;
