@@ -61,8 +61,13 @@ function doPost(e) {
     var p = JSON.parse(e.postData.contents), cache = CacheService.getScriptCache();
     var seen = p.reqId && p.action === 'submit' ? cache.get('req_' + p.reqId) : null;
     if (seen) return ContentService.createTextOutput(seen).setMimeType(ContentService.MimeType.JSON);   // retried save: don't save twice
-    if (['feed', 'adminLogin', 'adminData', 'myCampaigns', 'campaigns', 'allVolunteers', 'activity', 'admins'].indexOf(p.action) < 0) { lock.waitLock(28000); locked = true; }
-    out = { ok: true, data: dispatch(SheetStore, SheetAuth, p.action, p) };
+    var needLock = ['feed', 'adminLogin', 'adminData', 'myCampaigns', 'campaigns', 'allVolunteers', 'activity', 'admins'].indexOf(p.action) < 0;
+    if (p.action === 'state') {   // most refreshes change nothing: answer them without waiting in the queue
+      try { out = { ok: true, data: dispatch(SheetStore, SheetAuth, 'state', Object.assign({}, p, { _noAssign: true })) }; needLock = false; }
+      catch (e1) { if (String(e1 && e1.message) !== 'NEED_LOCK') throw e1; _cache = {}; }
+    }
+    if (needLock) { lock.waitLock(45000); locked = true; }
+    if (!out) out = { ok: true, data: dispatch(SheetStore, SheetAuth, p.action, p) };
     if (p.reqId && p.action === 'submit') { var js = JSON.stringify(out); if (js.length < 90000) cache.put('req_' + p.reqId, js, 600); }
   } catch (err) {
     out = { ok: false, error: String(err && err.message || err) };
@@ -236,6 +241,7 @@ function createCore(store, camp) {
       var cands = contacts.filter(function (x) { return eligible(x, phone); });
       cands.sort(function (a, b) { return rank(a, phone) - rank(b, phone) || a._i - b._i; });
       if (!cands.length && !inHand.length) poolEmpty = true;
+      if (cands.length && p._noAssign) throw new Error('NEED_LOCK');   // a new contact must be handed out: retry inside the lock
       while (inHand.length < want && cands.length && room()) {
         var pick = cands.shift();
         pick.assignedTo = phone; pick.assignedAt = now();
