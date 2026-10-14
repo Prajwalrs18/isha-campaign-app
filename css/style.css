@@ -286,3 +286,5 @@ textarea { width: 100%; min-height: 64px; border-radius: 12px; border: 1.5px sol
 .me-line { color: var(--gold); font-size: 13px; font-weight: 500; margin-top: 2px; }
 .adm .a-login input + input { margin-top: 0; }
 #adCancel.hidden + #adSave { grid-column: 1 / -1; }
+.mini.del { color: var(--red); border-color: #E8B4BC; }
+.mini.del.sure { background: var(--red); color: #fff; }
