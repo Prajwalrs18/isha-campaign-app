@@ -78,9 +78,8 @@
     var b = $('#loginBtn'); b.disabled = true; b.textContent = 'Opening…';
     api('myCampaigns', { phone: p }).then(function (r) {
       S.phone = p; S.camps = r.campaigns; LS.set('icc_phone', p);
-      var last = LS.get('icc_camp_' + p), only = S.camps.length === 1 ? S.camps[0] : null;
-      var again = resume && S.camps.filter(function (c) { return c.id === last; })[0];
-      if (only || again) return openCampaign(only || again, resume);
+      // only one campaign: go straight in. More than one: always show the list so the volunteer picks
+      if (S.camps.length === 1) return openCampaign(S.camps[0], resume);
       showPicker();
     }).catch(function (e) {
       $('#loginErr').textContent = e.message;

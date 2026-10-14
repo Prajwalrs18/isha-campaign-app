@@ -25,7 +25,7 @@ function statusOf(type) { return type === 'whatsapp' ? WA_STATUS : STATUS; }
 // Not reached = we never actually spoke to / messaged this person
 function missed(s) { return s === 'no_answer' || s === 'wrong_number' || s === 'no_whatsapp'; }
 var TABLES = {
-  Campaigns: ['id', 'name', 'type', 'startDate', 'endDate', 'perDay', 'message', 'introDate', 'introTime', 'active', 'createdAt', 'createdBy'],
+  Campaigns: ['id', 'name', 'type', 'startDate', 'endDate', 'perDay', 'message', 'introDate', 'introTime', 'active', 'createdAt', 'createdBy', 'deleted'],
   Admins:    ['phone', 'name', 'password', 'access', 'active', 'createdAt', 'createdBy'],   // access: whatsapp | call | both
   AdminLog:  ['ts', 'adminName', 'adminPhone', 'campaignId', 'campaignName', 'action', 'details'],
   Contacts: ['id', 'name', 'phone', 'email', 'programs', 'reservedFor', 'assignedTo', 'assignedAt',
@@ -503,7 +503,7 @@ function myCampaigns(store, phone) {
   phone = normPhone(phone);
   if (phone.length !== 10) throw new Error('Please enter your 10-digit mobile number');
   var today = istDay();
-  var list = store.all('Campaigns').map(campaignView).filter(function (c) {
+  var list = store.all('Campaigns').filter(notDeleted).map(campaignView).filter(function (c) {
     if (!c.active) return false;
     return store.all('Callers_' + c.id).some(function (v) { return normPhone(v.phone) === phone && String(v.active) !== 'false'; });
   }).map(function (c) {   // small progress line for the picker
@@ -529,8 +529,9 @@ function adminLogin(store, auth, p) {
   else throw new Error('Wrong phone number or password');
   return { token: auth.issue(admin), admin: admin, campaigns: visibleCampaigns(store, admin) };
 }
+function notDeleted(c) { return String(c.deleted) !== 'true'; }   // deleted campaigns are hidden; their tabs stay in the Sheet
 function visibleCampaigns(store, admin) {
-  return store.all('Campaigns').map(campaignView).filter(function (c) { return canSee(admin, c.type); });
+  return store.all('Campaigns').filter(notDeleted).map(campaignView).filter(function (c) { return canSee(admin, c.type); });
 }
 function adminView(a) {
   return { phone: normPhone(a.phone), name: a.name, access: a.access || 'both', active: String(a.active) !== 'false', createdBy: a.createdBy || '', createdAt: a.createdAt };
@@ -558,6 +559,7 @@ var LOGGED = {
   assignBulk: function (r, p) { return r.reserved + ' contacts reserved for ' + normPhone(p.phone); },
   syncAll: function () { return 'Re-split contacts across all volunteers'; },
   markFollow: function (r, p) { return 'Followed up with volunteer ' + normPhone(p.phone); },
+  deleteCampaign: function () { return 'Deleted campaign'; },
   saveAdmin: function (r, p) { return (p.isNew ? 'Added admin ' : 'Updated admin ') + r.name + ' (' + r.access + ')'; }
 };
 function logAdmin(store, admin, camp, action, p, r) {
@@ -584,6 +586,12 @@ function dispatch(store, auth, action, p) {
   var r;
   if (action === 'campaigns') return { campaigns: visibleCampaigns(store, admin), admin: admin };
   if (action === 'allVolunteers') return allVolunteers(store);
+  if (action === 'deleteCampaign') {
+    var dc = findCampaign(store, p.campaignId);
+    if (!canSee(admin, campaignView(dc).type)) throw new Error('You do not have access to this campaign');
+    dc.deleted = 'true'; dc.active = 'false'; store.update('Campaigns', dc);
+    logAdmin(store, admin, campaignView(dc), action, p, {}); return { ok: true };
+  }
   if (action === 'admins' || action === 'saveAdmin') {
     if (!admin.main) throw new Error('Only the main admin can manage admins');
     if (action === 'admins') return { admins: store.all('Admins').map(adminView) };

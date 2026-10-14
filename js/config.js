@@ -7,7 +7,7 @@ window.CONFIG = {
   // Only used in DEMO mode. With the Google Sheet, the password is set in Apps Script (see README).
   DEMO_ADMIN_PASSWORD: 'isha@123',
 
-  CAMPAIGN_TITLE: 'Outreach Seva · Calls & WhatsApp',
+  CAMPAIGN_TITLE: 'Outreach Karma Sadhana',
   // Campaign dates, per-day targets and the WhatsApp message are now set per campaign on the admin page.
   CAMPAIGN_START_DATE: '', CAMPAIGN_END_DATE: '', INTRO_DATE: '', INTRO_TIME: '',
   SECTOR: 'Isha · Electronic City Sector',
@@ -47,7 +47,13 @@ window.CONFIG = {
   QUOTES: [
     'The most beautiful moments in life are moments when you are expressing your joy, not when you are seeking it.',
     'Do not try to fix whatever comes in your life. Fix yourself in such a way that whatever comes, you will be fine.',
-    'If you think you are big, you become small. If you know you are nothing, you become unlimited.'
+    'If you think you are big, you become small. If you know you are nothing, you become unlimited.',
+    'The only way out is in.',
+    'Incredible things can be done simply if we are committed to making them happen.',
+    'When pain, misery or anger happen, it is time to look within you, not around you.',
+    'Responsibility means you are able to respond.',
+    'If you resist change, you resist life.',
+    'The sign of intelligence is that you are constantly wondering.'
   ],
 
   // Background photos (in /img). Rotate slowly behind the app.

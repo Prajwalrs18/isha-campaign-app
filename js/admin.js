@@ -92,7 +92,7 @@
       return '<div class="camp-card ' + (wa ? 'wa' : 'call') + (c.active ? '' : ' off') + '">' +
         '<span class="camp-ic">' + (wa ? '💬' : '📞') + '</span>' +
         '<span class="camp-body"><b>' + esc(c.name) + (c.active ? '' : ' (hidden)') + '</b><small>' + (wa ? 'WhatsApp' : 'Calls') + ' · ' + c.perDay + '/day · ' + niceD(c.startDate) + ' – ' + niceD(c.endDate) + '</small></span>' +
-        '<span class="camp-btns"><button class="mini" data-kedit="' + esc(c.id) + '">Edit</button><button class="btn primary" data-open="' + esc(c.id) + '">Open</button></span></div>';
+        '<span class="camp-btns"><button class="mini del" data-kdel="' + esc(c.id) + '">Delete</button><button class="mini" data-kedit="' + esc(c.id) + '">Edit</button><button class="btn primary" data-open="' + esc(c.id) + '">Open</button></span></div>';
     }).join('') : '<p class="muted">No campaigns yet. Create your first one below 🌸</p>';
     resetCampForm();
   }
@@ -115,6 +115,13 @@
   $('#kVols').onchange = function (e) { var p = e.target.dataset.ph; if (!p) return; if (e.target.checked) A.kSel[p] = 1; else delete A.kSel[p]; $('#kCount').textContent = Object.keys(A.kSel).length ? ' · ' + Object.keys(A.kSel).length + ' selected' : ''; };
   $('#kAll').onclick = function () { A.vols.forEach(function (v) { A.kSel[v.phone] = 1; }); renderVolPick(); };
   $('#campList').onclick = function (e) {
+    var del = e.target.closest('[data-kdel]');
+    if (del) {   // two taps to delete, so nobody deletes by mistake
+      if (!del.classList.contains('sure')) { del.classList.add('sure'); del.textContent = 'Tap again to delete'; setTimeout(function () { del.classList.remove('sure'); del.textContent = 'Delete'; }, 4000); return; }
+      del.disabled = true;
+      return call('deleteCampaign', { campaignId: del.dataset.kdel }).then(function () { toast('Campaign deleted 🙏 (its data stays in the Google Sheet)', 4000); return refreshCamps(); })
+        .catch(function (er) { toast('⚠️ ' + er.message); del.disabled = false; });
+    }
     var o = e.target.closest('[data-open]'), ed = e.target.closest('[data-kedit]');
     var id = (o || ed || {}).dataset; if (!id) return;
     var c = A.camps.filter(function (x) { return x.id === (o ? o.dataset.open : ed.dataset.kedit); })[0];
@@ -257,18 +264,19 @@
       return '<option value="' + d + '">' + shortDay(d) + (d === istDay() ? ' (today)' : d === addDays(istDay(), -1) ? ' (yesterday)' : '') + '</option>';
     }).join('');
     pick.value = keep && (keep === 'all' || daily[keep]) ? keep : (days[0] || 'all');
-    var sel = pick.value, sum = {}, vols = A.d.callers.map(function (v) { return v.phone; });
+    var sel = pick.value, sum = {}, vols = A.d.callers.filter(function (v) { return v.active; }).map(function (v) { return v.phone; });
+    var off = {}; A.d.callers.forEach(function (v) { if (!v.active) off[v.phone] = 1; });   // deactivated volunteers: hidden, but still counted in the team total
     (sel === 'all' ? days : [sel]).forEach(function (d) {
       var bv = (daily[d] && daily[d].byVol) || {};
       Object.keys(bv).forEach(function (p) {
         var s = sum[p] || (sum[p] = { done: 0, reached: 0, days: 0 });
         s.done += bv[p].done; s.reached += bv[p].reached; s.days++;
-        if (vols.indexOf(p) < 0) vols.push(p);
+        if (vols.indexOf(p) < 0 && !off[p]) vols.push(p);
       });
     });
     var rows = vols.map(function (p) { return { p: p, s: sum[p] || { done: 0, reached: 0, days: 0 } }; })
       .sort(function (a, b) { return b.s.done - a.s.done; });
-    var tot = rows.reduce(function (t, r) { t.done += r.s.done; t.reached += r.s.reached; return t; }, { done: 0, reached: 0 });
+    var tot = Object.keys(sum).reduce(function (t, p) { t.done += sum[p].done; t.reached += sum[p].reached; return t; }, { done: 0, reached: 0 });
     $('#dayTbl').innerHTML = '<tr><th>Volunteer</th><th class="num">' + (isWA ? 'Messages' : 'Calls') + '</th><th class="num">' + (isWA ? 'Sent 📤' : 'Spoke to') + '</th>' +
       (sel === 'all' ? '<th class="num">Active days</th>' : '') + '</tr>' +
       rows.map(function (r) {
@@ -305,7 +313,7 @@
     $('#bars').innerHTML = Object.keys(ST).map(function (k) {
       return '<div class="bar"><span>' + ST[k].emoji + ' ' + ST[k].label + '</span><div class="track"><div class="fill" style="width:' + (100 * (c[k] || 0) / max) + '%"></div></div><span class="n">' + (c[k] || 0) + '</span></div>';
     }).join('') + '<p class="muted tiny" style="margin:8px 0 0">' + c.unreachable + ' contacts did not pick up after 3 tries.</p>';
-    var rows = d.callers.slice().sort(function (a, b) { return (b.active - a.active) || (a.todayDone / a.perDay) - (b.todayDone / b.perDay); });
+    var rows = d.callers.filter(function (v) { return v.active; }).sort(function (a, b) { return (a.todayDone / a.perDay) - (b.todayDone / b.perDay); });
     if (!$('#dashCallers').contains(document.activeElement)) $('#dashCallers').innerHTML = '<tr><th>Caller</th><th>Follow-up</th><th>Today</th><th class="num">Dials</th><th class="num">Total</th><th class="num">Intro</th><th class="num">Reg</th><th class="num">Days left</th></tr>' +
       (rows.length ? rows.map(function (v) {
         var pct = Math.min(100, 100 * v.todayDone / v.perDay);
