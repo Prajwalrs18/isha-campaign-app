@@ -246,8 +246,10 @@ function createCore(store, camp) {
       v.todayDone = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today && counted(l.status); }).length;
       v.todayDials = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today; }).length;
       v.dials = mine.filter(isCall).length;
-      v.regs = mine.filter(function (l) { return l.status === 'registered'; }).length;
-      v.intros = mine.filter(function (l) { return l.status === 'intro'; }).length;
+      v.reached = mine.filter(function (l) { return isCall(l) && !missed(l.status); }).length;
+      var called = contacts.filter(function (x) { return normPhone(x.calledBy) === p; });   // current result of people they reached
+      v.regs = called.filter(function (x) { return x.status === 'registered'; }).length;
+      v.intros = called.filter(function (x) { return x.status === 'intro'; }).length;
       v.inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === p; }).length;
       v.reserved = contacts.filter(function (x) { return normPhone(x.reservedFor) === p && !x.status; }).length;
       v.streak = streakOf(mine, v.perDay);
@@ -441,7 +443,16 @@ function createCore(store, camp) {
     return { ok: true, followedBy: c.followedBy, followedAt: c.followedAt };
   }
 
-  return { syncAll: syncAll, markFollow: markFollow, state: state, login: state, submit: submit, feed: feed, adminData: adminData, saveCaller: saveCaller,
+  function callerHistory(p) {   // everything one volunteer logged, newest first
+    var phone = normPhone(p.phone), byId = {};
+    store.all('Contacts').forEach(function (x) { byId[String(x.id)] = x; });
+    return store.all('Log').filter(function (l) { return normPhone(l.callerPhone) === phone; }).reverse().map(function (l) {
+      var x = byId[String(l.contactId)] || {};
+      return { ts: l.ts, name: l.contactName, phone: normPhone(x.phone), status: l.status, notes: l.notes, update: l.milestone === 'update', now: x.status || '' };
+    });
+  }
+
+  return { callerHistory: callerHistory, syncAll: syncAll, markFollow: markFollow, state: state, login: state, submit: submit, feed: feed, adminData: adminData, saveCaller: saveCaller,
            uploadContacts: uploadContacts, assignContacts: assignContacts, assignBulk: assignBulk };
 }
 

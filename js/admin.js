@@ -132,7 +132,8 @@
     [].forEach.call(document.querySelectorAll('.k-wa'), function (x) { x.classList.toggle('hidden', !wa); });
     [].forEach.call(document.querySelectorAll('.k-call'), function (x) { x.classList.toggle('hidden', wa); });
     $('#kPerLbl').textContent = wa ? 'Messages per volunteer per day' : 'Calls per volunteer per day';
-    if (!A.kEdit) { $('#kPer').value = wa ? 30 : 2; if (wa && !$('#kMsg').value) $('#kMsg').value = window.CONFIG.WHATSAPP_TEMPLATE; }
+    $('#kMsgLbl').textContent = wa ? 'WhatsApp message' : 'WhatsApp message (when a caller taps WhatsApp after a call)';
+    if (!A.kEdit) { $('#kPer').value = wa ? 30 : 2; if (!$('#kMsg').value) $('#kMsg').value = window.CONFIG.WHATSAPP_TEMPLATE; }
     kCalc();
   }
   function kCalc() {   // how many volunteers a list needs
@@ -155,7 +156,7 @@
     A.kEdit = c; $('#kTitle').textContent = '✏️ Edit ' + c.name; $('#kSave').textContent = 'Save changes';
     $('#kName').value = c.name; $('#kType').value = c.type; $('#kType').disabled = true;
     $('#kPer').value = c.perDay; $('#kStart').value = c.startDate; $('#kEnd').value = c.endDate;
-    $('#kMsg').value = c.message || ''; $('#kIntro').value = c.introDate || ''; $('#kIntroT').value = c.introTime || '';
+    $('#kMsg').value = c.message || window.CONFIG.WHATSAPP_TEMPLATE; $('#kIntro').value = c.introDate || ''; $('#kIntroT').value = c.introTime || '';
     $('#kActive').checked = c.active; $('#kActiveRow').classList.remove('hidden'); $('#kCancel').classList.remove('hidden');
     renderVolPick(); kTypeChanged(); $('#campFormCard').scrollIntoView({ behavior: 'smooth' });
   }
@@ -163,7 +164,7 @@
   $('#kSave').onclick = function () {
     var b = this; b.disabled = true;
     var p = { name: $('#kName').value, type: $('#kType').value, perDay: $('#kPer').value, startDate: $('#kStart').value, endDate: $('#kEnd').value,
-              message: $('#kType').value === 'whatsapp' ? $('#kMsg').value : '', introDate: $('#kIntro').value, introTime: $('#kIntroT').value };
+              message: $('#kMsg').value, introDate: $('#kIntro').value, introTime: $('#kIntroT').value };
     if (A.kEdit) { p.id = A.kEdit.id; p.active = $('#kActive').checked; }
     else p.volunteers = A.vols.filter(function (v) { return A.kSel[v.phone]; });
     call('saveCampaign', p).then(function (c) {
@@ -317,7 +318,8 @@
     if (!$('#dashCallers').contains(document.activeElement)) $('#dashCallers').innerHTML = '<tr><th>Caller</th><th>Follow-up</th><th>Today</th><th class="num">Dials</th><th class="num">Total</th><th class="num">Intro</th><th class="num">Reg</th><th class="num">Days left</th></tr>' +
       (rows.length ? rows.map(function (v) {
         var pct = Math.min(100, 100 * v.todayDone / v.perDay);
-        return '<tr class="' + (v.active ? '' : 'off') + '"><td><b>' + esc(v.name) + '</b><br><span class="muted">' + v.phone + '</span>' +
+        return '<tr class="' + (v.active ? '' : 'off') + '"><td><button class="hist-open" data-phone="' + v.phone + '">' + esc(v.name) + ' ›</button><br><span class="muted">' + v.phone + '</span>' +
+          '<div class="c-tot">' + (isWA ? '💬 ' : '📞 ') + v.dials + ' ' + W(v.dials) + ' in total · ' + (v.reached || 0) + ' reached</div>' +
           '<div class="c-acts"><a class="call" href="tel:+91' + v.phone + '">📞 Call</a><a class="wa" target="_blank" rel="noopener" href="https://wa.me/91' + v.phone + '?text=' + encodeURIComponent(nudgeText(v)) + '">💬 WhatsApp</a></div></td>' +
           '<td class="fu-cell" data-phone="' + v.phone + '"><div class="' + (v.followedBy ? 'fu-last' : 'fu-last none') + '">' + (v.followedBy ? '✅ ' + esc(v.followedBy) + ' · ' + shortDay(v.followedAt) : 'Not followed up yet') + '</div>' +
           '<div class="fu-form"><input class="fu-by" placeholder="Your name" value="' + esc(LS.get('icc_admin_name') || (A.me ? A.me.name : '')) + '"><input class="fu-date" type="date" value="' + istDay() + '"><button class="mini fu-save" title="Save follow-up">✓</button></div></td>' +
@@ -333,6 +335,7 @@
 
   function shortDay(d) { return d ? Number(d.slice(8, 10)) + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(d.slice(5, 7)) - 1] : ''; }
   $('#dashCallers').onclick = function (e) {   // admin logs a follow-up with a caller
+    var h = e.target.closest('.hist-open'); if (h) return showHistory(h.dataset.phone);
     var b = e.target.closest('.fu-save'); if (!b) return;
     var td = b.closest('.fu-cell'), by = td.querySelector('.fu-by').value.trim(), date = td.querySelector('.fu-date').value;
     if (!by) { toast('Please type your name'); return; }
@@ -342,6 +345,22 @@
       b.blur(); toast('Follow-up saved 🙏'); return load();
     }).catch(function (e) { toast('⚠️ ' + e.message); }).then(function () { b.disabled = false; });
   };
+  function showHistory(phone) {   // every result this volunteer logged, newest first, with the remarks
+    $('#hTitle').textContent = callerName(phone) + ' · ' + (isWA ? 'message' : 'call') + ' history';
+    $('#hSum').textContent = ''; $('#hList').innerHTML = '<li class="empty">Loading…</li>';
+    $('#histWrap').classList.remove('hidden');
+    call('callerHistory', { phone: phone }).then(function (rows) {
+      var n = rows.filter(function (r) { return !r.update; }).length;
+      $('#hSum').textContent = n + ' ' + W(n) + ' · ' + (rows.length - n) + ' updates';
+      $('#hList').innerHTML = rows.map(function (r) {
+        var s = ST[r.status] || { emoji: '', label: r.status }, now = ST[r.now];
+        return '<li><span class="fi">' + s.emoji + '</span><div><b>' + esc(r.name || r.phone) + '</b> ' + (r.phone ? '<a href="tel:+91' + r.phone + '">' + r.phone + '</a>' : '') +
+          '<br>' + esc(s.label) + (r.update ? ' <span class="muted">(updated)</span>' : '') + (r.notes ? ' <span class="muted">“' + esc(r.notes) + '”</span>' : '') +
+          (now && r.now !== r.status ? '<br><span class="muted tiny">Now: ' + now.emoji + ' ' + esc(now.label) + '</span>' : '') + '<time>' + fmt(r.ts) + '</time></div></li>';
+      }).join('') || '<li class="empty">Nothing yet</li>';
+    }).catch(function (e) { $('#hList').innerHTML = '<li class="empty">⚠️ ' + esc(e.message) + '</li>'; });
+  }
+  $('#hClose').onclick = function () { $('#histWrap').classList.add('hidden'); };
   $('#syncAll').onclick = function () {
     var b = this; b.disabled = true;
     call('syncAll').then(function (r) { toast('Synced 🙏 ' + r.unassigned + ' contacts unassigned'); return load(); })

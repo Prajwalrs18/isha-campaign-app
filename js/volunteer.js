@@ -385,7 +385,7 @@
     if (status === 'registered') return celebrate('👏', 'A Registration! Jai, ' + name + '!', 'Someone is going to experience Inner Engineering because of your call. Everyone is clapping for you.', true);
     if (milestone === 'update' && status !== 'intro') return toast('✅ Updated (not counted as a new ' + W(1) + ')');
     if (milestone === 'target') return celebrate('🙏', "Today's target complete!", 'Beautiful Karma Sadhana, ' + name + ' 🙏', false);
-    if (status === 'intro') { FX.shower(45); FX.chime(); return toast('🌼 Wonderful! They will join the intro'); }
+    if (status === 'intro') return celebrate('🌼', 'Wonderful, ' + name + '!', 'They will join the Intro. Everyone in the squad is celebrating with you 🙏', false);
     if (status === 'interested_later') { FX.shower(25); return toast('🌱 A seed is planted. Thank you!'); }
     if (milestone === 'extra') { FX.shower(30); FX.chime(); return toast('✨ Extra mile! Everyone can see it'); }
     if (status === 'follow_up') { FX.shower(15); return toast('📌 Added to your Follow-ups tab'); }
@@ -492,6 +492,8 @@
       if (d.feed[0] && d.feed[0].ts > S.lastSeen) { S.lastSeen = d.feed[0].ts; LS.set('icc_lastSeen_' + S.phone + '_' + S.camp.id, S.lastSeen); }
       var reg = fresh.filter(function (f) { return f.type === 'registered'; })[0];
       if (reg) return celebrate('👏', reg.who + ' got a registration!', 'Let us all clap for ' + reg.who + ' 🙏 Your next call could be the one.', true);
+      var intro = fresh.filter(function (f) { return f.type === 'intro'; })[0];
+      if (intro) return celebrate('🌼', intro.who + ' has someone joining the Intro!', 'One more person will taste Inner Engineering 🙏 Your next call could be the one.', false);
       var other = fresh[fresh.length - 1];
       if (other) { var x = FEED_TXT[other.type]; toast(x[0] + ' ' + other.who + x[1].replace(/<\/?b>/g, ''), 3500); FX.shower(15); }
     }).catch(function () {});
