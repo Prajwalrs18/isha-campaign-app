@@ -101,7 +101,9 @@ var STATUS = {
   not_interested:   { label: 'Not interested',         emoji: '🙏' },
   no_answer:        { label: "Didn't receive",         emoji: '📵' },
   wrong_number:     { label: 'Wrong number',           emoji: '❌' },
-  completed_ie:     { label: 'Completed Inner Engineering', emoji: '🪷' }
+  completed_ie:     { label: 'Completed Inner Engineering', emoji: '🪷' },
+  shared_wa:        { label: 'Shared on WhatsApp',     emoji: '📲' },
+  location_changed: { label: 'Location changed',       emoji: '📍' }
 };
 // WhatsApp message campaigns use these instead
 var WA_STATUS = {
@@ -111,7 +113,9 @@ var WA_STATUS = {
 };
 function statusOf(type) { return type === 'whatsapp' ? WA_STATUS : STATUS; }
 // Not reached = we never actually spoke to / messaged this person
-function missed(s) { return s === 'no_answer' || s === 'wrong_number' || s === 'no_whatsapp'; }
+function missed(s) { return s === 'no_answer' || s === 'wrong_number' || s === 'no_whatsapp' || s === 'shared_wa'; }
+// A WhatsApp on its own (no conversation) is not a completed call — same as "Didn't receive"
+function counted(s) { return s !== 'no_answer' && s !== 'shared_wa'; }
 var TABLES = {
   Campaigns: ['id', 'name', 'type', 'startDate', 'endDate', 'perDay', 'message', 'introDate', 'introTime', 'active', 'createdAt', 'createdBy', 'deleted'],
   Admins:    ['phone', 'name', 'password', 'access', 'active', 'createdAt', 'createdBy'],   // access: whatsapp | call | both
@@ -209,7 +213,7 @@ function createCore(store, camp) {
 
   function streakOf(mine, perDay) {
     var byDay = {};
-    mine.forEach(function (l) { if (isCall(l) && l.status !== 'no_answer') { var d = istDay(l.ts); byDay[d] = (byDay[d] || 0) + 1; } });
+    mine.forEach(function (l) { if (isCall(l) && counted(l.status)) { var d = istDay(l.ts); byDay[d] = (byDay[d] || 0) + 1; } });
     var d = istDay(), s = 0;
     if ((byDay[d] || 0) < perDay) d = addDays(d, -1);
     while ((byDay[d] || 0) >= perDay) { s++; d = addDays(d, -1); }
@@ -223,12 +227,12 @@ function createCore(store, camp) {
     var log = store.all('Log');
     var mine = log.filter(function (l) { return normPhone(l.callerPhone) === phone; });
     var todayMine = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today; });
-    var done = todayMine.filter(function (l) { return l.status !== 'no_answer'; }).length;
+    var done = todayMine.filter(function (l) { return counted(l.status); }).length;
     // calls owed from earlier days: from the caller's real first day (added mid-campaign = later start) until yesterday
     var created = c.createdAt ? istDay(c.createdAt) : '', first = cv.startDate > created ? cv.startDate : created;
     var lastPast = c.endDate && c.endDate < today ? addDays(c.endDate, 1) : today;
     var pastDays = first && first < lastPast ? daysBetween(first, lastPast) : 0;
-    var doneBefore = mine.filter(function (l) { return isCall(l) && istDay(l.ts) < today && l.status !== 'no_answer'; }).length;
+    var doneBefore = mine.filter(function (l) { return isCall(l) && istDay(l.ts) < today && counted(l.status); }).length;
     var pending = cv.active ? Math.max(0, pastDays * cv.perDay - doneBefore) : 0;
     var contacts = store.all('Contacts');
     var inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === phone; });
@@ -262,7 +266,7 @@ function createCore(store, camp) {
     }
     var td = teamData(log, store.all('Callers'));
     var left = contacts.filter(function (x) { return !x.status && (normPhone(x.reservedFor) === phone || normPhone(x.assignedTo) === phone); }).length;
-    var reachedAll = contacts.filter(function (x) { return x.status && x.status !== 'no_answer'; }).length;
+    var reachedAll = contacts.filter(function (x) { return x.status && counted(x.status); }).length;
     return {
       caller: cv, left: left, camp: { total: contacts.length, done: reachedAll }, today: { done: done, dials: todayMine.length, target: cv.perDay, pending: pending },
       inHand: inHand.map(contactView), over: over, poolEmpty: poolEmpty,
@@ -285,13 +289,13 @@ function createCore(store, camp) {
       throw new Error('This contact is no longer assigned to you');
     var today = istDay();
     var done = store.all('Log').filter(function (l) {
-      return isCall(l) && normPhone(l.callerPhone) === phone && istDay(l.ts) === today && l.status !== 'no_answer';
+      return isCall(l) && normPhone(l.callerPhone) === phone && istDay(l.ts) === today && counted(l.status);
     }).length;
     // Already reached earlier (any result except "Didn't receive") = just an update, not a call
-    var isUpdate = !!contact.status && contact.status !== 'no_answer';
+    var isUpdate = !!contact.status && counted(contact.status);
     var milestone = isUpdate ? 'update' : '';
     if (isUpdate && contact.status === p.status && !p.notes) { var same = state({ phone: phone }); same.saved = p.status; return same; }   // nothing changed
-    if (!isUpdate && p.status !== 'no_answer') {
+    if (!isUpdate && counted(p.status)) {
       if (done + 1 === cv.perDay) milestone = 'target';
       else if (done + 1 > cv.perDay) milestone = 'extra';
     }
@@ -327,7 +331,7 @@ function createCore(store, camp) {
     var cl = callers.map(function (c) {
       var v = callerView(c), p = v.phone;
       var mine = log.filter(function (l) { return normPhone(l.callerPhone) === p; });
-      v.todayDone = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today && l.status !== 'no_answer'; }).length;
+      v.todayDone = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today && counted(l.status); }).length;
       v.todayDials = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today; }).length;
       v.dials = mine.filter(isCall).length;
       v.regs = mine.filter(function (l) { return l.status === 'registered'; }).length;
