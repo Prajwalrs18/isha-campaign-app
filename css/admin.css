@@ -55,3 +55,12 @@
 .hist-open { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--maroon); cursor: pointer; text-align: left; text-decoration: underline dotted; }
 .c-tot { font-size: 12px; color: var(--muted, #7a6a5a); margin-top: 2px; }
 .hist-list { max-height: 60vh; overflow-y: auto; margin: 0 0 12px; padding: 0; }
+
+/* phone: campaign buttons go on their own row under the name */
+@media (max-width: 600px) {
+  #campList .camp-card { flex-wrap: wrap; }
+  #campList .camp-body { flex: 1 1 calc(100% - 70px); }
+  #campList .camp-btns { width: 100%; justify-content: flex-end; }
+  #campList .camp-btns .btn { flex: 1; }
+  #campList .camp-btns .mini { min-height: 38px; padding: 0 14px; }
+}
