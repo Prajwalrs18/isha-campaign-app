@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=10">
-<link rel="stylesheet" href="css/admin.css?v=10">
+<link rel="stylesheet" href="css/style.css?v=11">
+<link rel="stylesheet" href="css/admin.css?v=11">
 </head>
 <body class="adm">
 <div class="bg"><div class="bg-img show" style="background-image:url(img/admin.jpg)"></div><div class="bg-shade"></div></div>
@@ -58,8 +58,6 @@
         <label>Start date<input id="kStart" type="date"></label>
         <label>End date<input id="kEnd" type="date"></label>
         <label class="full"><span id="kMsgLbl">WhatsApp message</span> <span class="muted tiny">({name} = contact's first name, {caller} = volunteer's first name)</span><textarea id="kMsg" rows="8" placeholder="Namaskaram {name} 🙏 …"></textarea></label>
-        <label class="full">Admin reminder to a volunteer — calls / messages pending <span class="muted tiny">({name} = volunteer, {done} {target} {left} = today's numbers, {work} = calls or messages)</span><textarea id="kNuP" rows="5"></textarea></label>
-        <label class="full">Admin thank-you to a volunteer — today's target done<textarea id="kNuD" rows="3"></textarea></label>
         <label class="k-call hidden">Intro date (optional)<input id="kIntro" type="date"></label>
         <label class="k-call hidden">Intro time (optional)<input id="kIntroT" placeholder="e.g. 6–7 AM"></label>
         <div class="full k-vols" id="kVolsBox">
@@ -97,6 +95,15 @@
     <div class="card"><h3 class="h3">People not reached</h3><p class="muted">Everyone we have not reached yet: not contacted, didn't receive, no WhatsApp, or wrong number.</p><button class="btn primary big" id="dlNotReached">⬇ Download not-reached list (CSV)</button></div>
     <div class="card"><h3 class="h3">Outcomes</h3><div class="bars" id="bars"></div></div>
     <div class="card"><h3 class="h3">Volunteers today <span class="muted tiny">· least done first</span></h3><div class="tbl-wrap"><table class="tbl" id="dashCallers"></table></div></div>
+    <div class="card">
+      <h3 class="h3">🙏 Admin messages to volunteers</h3>
+      <p class="muted tiny" style="margin:0">Used by the 💬 WhatsApp button next to each volunteer above (this campaign only). <b>{name}</b> = volunteer's first name, <b>{done}</b> = done today, <b>{target}</b> = per day, <b>{left}</b> = left today, <b>{work}</b> = calls or messages.</p>
+      <label class="muted tiny" style="display:block;margin-top:10px">When some are still pending today</label>
+      <textarea id="kNuP" rows="6"></textarea>
+      <label class="muted tiny" style="display:block;margin-top:10px">When today's target is complete</label>
+      <textarea id="kNuD" rows="4"></textarea>
+      <div class="row2" style="margin-top:10px"><button class="btn ghost" id="nuReset">Load default</button><button class="btn primary" id="nuSave">Save messages</button></div>
+    </div>
     <div class="card"><h3 class="h3">🗂️ Admin activity</h3><p class="muted tiny">Who created, uploaded, added volunteers or assigned contacts in this campaign.</p><ul class="feed" id="adminAct"></ul></div>
     <div class="card"><h3 class="h3">Recent activity</h3><ul class="feed" id="recent"></ul></div>
   </section>
@@ -185,9 +192,9 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/config.js?v=10"></script>
-<script src="js/core.js?v=10"></script>
-<script src="js/api.js?v=10"></script>
-<script src="js/admin.js?v=10"></script>
+<script src="js/config.js?v=11"></script>
+<script src="js/core.js?v=11"></script>
+<script src="js/api.js?v=11"></script>
+<script src="js/admin.js?v=11"></script>
 </body>
 </html>
