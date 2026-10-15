@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=8">
+<link rel="stylesheet" href="css/style.css?v=9">
 </head>
 <body class="vol">
 <div class="bg" id="bg"><div class="bg-img" id="bgA"></div><div class="bg-img" id="bgB"></div><div class="bg-shade"></div></div>
@@ -67,6 +67,16 @@
   </div>
 </div>
 
+<!-- WHATSAPP PACE WARNING -->
+<div class="overlay hidden" id="pace">
+  <div class="cel-box pace-box">
+    <div class="pace-emoji">⏳</div>
+    <h2 id="paceTitle"></h2>
+    <p id="paceText"></p>
+    <button class="btn primary big" id="paceWait">OK, I’ll take a break 🙏</button>
+    <button class="btn ghost" id="paceGo">I understand, send anyway</button>
+  </div>
+</div>
 
 <!-- APP -->
 <main class="screen app hidden" id="app">
@@ -108,10 +118,10 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="js/config.js?v=8"></script>
-<script src="js/core.js?v=8"></script>
-<script src="js/api.js?v=8"></script>
-<script src="js/fx.js?v=8"></script>
-<script src="js/volunteer.js?v=8"></script>
+<script src="js/config.js?v=9"></script>
+<script src="js/core.js?v=9"></script>
+<script src="js/api.js?v=9"></script>
+<script src="js/fx.js?v=9"></script>
+<script src="js/volunteer.js?v=9"></script>
 </body>
 </html>
