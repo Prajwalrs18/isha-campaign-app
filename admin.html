@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=5">
-<link rel="stylesheet" href="css/admin.css?v=5">
+<link rel="stylesheet" href="css/style.css?v=6">
+<link rel="stylesheet" href="css/admin.css?v=6">
 </head>
 <body class="adm">
 <div class="bg"><div class="bg-img show" style="background-image:url(img/admin.jpg)"></div><div class="bg-shade"></div></div>
@@ -57,7 +57,7 @@
         <label><span id="kPerLbl">Messages per volunteer per day</span><input id="kPer" type="number" min="1" value="30"></label>
         <label>Start date<input id="kStart" type="date"></label>
         <label>End date<input id="kEnd" type="date"></label>
-        <label class="full k-wa">WhatsApp message <span class="muted tiny">({name} = contact's first name, {caller} = volunteer's first name)</span><textarea id="kMsg" rows="8" placeholder="Namaskaram {name} 🙏 …"></textarea></label>
+        <label class="full"><span id="kMsgLbl">WhatsApp message</span> <span class="muted tiny">({name} = contact's first name, {caller} = volunteer's first name)</span><textarea id="kMsg" rows="8" placeholder="Namaskaram {name} 🙏 …"></textarea></label>
         <label class="k-call hidden">Intro date (optional)<input id="kIntro" type="date"></label>
         <label class="k-call hidden">Intro time (optional)<input id="kIntroT" placeholder="e.g. 6–7 AM"></label>
         <div class="full k-vols" id="kVolsBox">
@@ -171,12 +171,21 @@
     <div class="row2"><button class="btn ghost" id="eCancel">Cancel</button><button class="btn primary" id="eSave">Save</button></div>
   </div>
 </div>
+<div class="overlay sheet-wrap hidden" id="histWrap">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 id="hTitle"></h3>
+    <p class="muted tiny" id="hSum"></p>
+    <ul class="feed hist-list" id="hList"></ul>
+    <button class="btn ghost" id="hClose">Close</button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="js/config.js?v=5"></script>
-<script src="js/core.js?v=5"></script>
-<script src="js/api.js?v=5"></script>
-<script src="js/admin.js?v=5"></script>
+<script src="js/config.js?v=6"></script>
+<script src="js/core.js?v=6"></script>
+<script src="js/api.js?v=6"></script>
+<script src="js/admin.js?v=6"></script>
 </body>
 </html>
