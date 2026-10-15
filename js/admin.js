@@ -146,7 +146,6 @@
   function resetCampForm() {
     A.kEdit = null; $('#kTitle').textContent = '➕ New campaign'; $('#kSave').textContent = 'Create campaign';
     ['#kName', '#kMsg', '#kIntro', '#kIntroT'].forEach(function (x) { $(x).value = ''; });
-    $('#kNuP').value = window.CONFIG.NUDGE_PENDING; $('#kNuD').value = window.CONFIG.NUDGE_DONE;
     $('#kType').disabled = false; $('#kType').value = 'whatsapp';
     $('#kStart').value = istDay(); $('#kEnd').value = addDays(istDay(), 6);
     $('#kActiveRow').classList.add('hidden'); $('#kCancel').classList.add('hidden');
@@ -158,7 +157,6 @@
     $('#kName').value = c.name; $('#kType').value = c.type; $('#kType').disabled = true;
     $('#kPer').value = c.perDay; $('#kStart').value = c.startDate; $('#kEnd').value = c.endDate;
     $('#kMsg').value = c.message || window.CONFIG.WHATSAPP_TEMPLATE; $('#kIntro').value = c.introDate || ''; $('#kIntroT').value = c.introTime || '';
-    $('#kNuP').value = c.nudgePending || window.CONFIG.NUDGE_PENDING; $('#kNuD').value = c.nudgeDone || window.CONFIG.NUDGE_DONE;
     $('#kActive').checked = c.active; $('#kActiveRow').classList.remove('hidden'); $('#kCancel').classList.remove('hidden');
     renderVolPick(); kTypeChanged(); $('#campFormCard').scrollIntoView({ behavior: 'smooth' });
   }
@@ -166,8 +164,7 @@
   $('#kSave').onclick = function () {
     var b = this; b.disabled = true;
     var p = { name: $('#kName').value, type: $('#kType').value, perDay: $('#kPer').value, startDate: $('#kStart').value, endDate: $('#kEnd').value,
-              message: $('#kMsg').value, introDate: $('#kIntro').value, introTime: $('#kIntroT').value,
-              nudgePending: $('#kNuP').value, nudgeDone: $('#kNuD').value };
+              message: $('#kMsg').value, introDate: $('#kIntro').value, introTime: $('#kIntroT').value };
     if (A.kEdit) { p.id = A.kEdit.id; p.active = $('#kActive').checked; }
     else p.volunteers = A.vols.filter(function (v) { return A.kSel[v.phone]; });
     call('saveCampaign', p).then(function (c) {
@@ -179,7 +176,7 @@
   $('#toCamps').onclick = function () { refreshCamps().catch(function (e) { toast('⚠️ ' + e.message); }); };
 
   function openCamp(c) {
-    A.camp = c; isWA = c.type === 'whatsapp'; ST = statusOf(c.type);
+    A.camp = c; A.nuDirty = false; isWA = c.type === 'whatsapp'; ST = statusOf(c.type);
     var C = window.CONFIG;
     C.CAMPAIGN_TITLE = c.name; C.CAMPAIGN_START_DATE = c.startDate; C.CAMPAIGN_END_DATE = c.endDate;
     document.body.classList.toggle('wa-mode', isWA);
@@ -243,7 +240,7 @@
   };
   $('#sumWa').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent($('#sumText').value), '_blank'); };
 
-  function renderAll() { if (!A.sumDay) showSummary(addDays(istDay(), -1)); renderDash(); renderDayReport(); loadActivity(); renderCallers(); renderContacts(); updatePreview(); fillCallerSelects(); }
+  function renderAll() { if (!A.sumDay) showSummary(addDays(istDay(), -1)); renderDash(); renderNudge(); renderDayReport(); loadActivity(); renderCallers(); renderContacts(); updatePreview(); fillCallerSelects(); }
   function callerName(p) { var c = A.d.callers.filter(function (x) { return x.phone === p; })[0]; return c ? c.name : p; }
 
   function loadActivity() {
@@ -367,6 +364,20 @@
   $('#syncAll').onclick = function () {
     var b = this; b.disabled = true;
     call('syncAll').then(function (r) { toast('Synced 🙏 ' + r.unassigned + ' contacts unassigned'); return load(); })
+      .catch(function (e) { toast('⚠️ ' + e.message); }).then(function () { b.disabled = false; });
+  };
+  function renderNudge() {   // the admin's reminder / thank-you messages for this campaign (Dashboard)
+    if (A.nuDirty || !A.camp) return;
+    $('#kNuP').value = A.camp.nudgePending || window.CONFIG.NUDGE_PENDING;
+    $('#kNuD').value = A.camp.nudgeDone || window.CONFIG.NUDGE_DONE;
+  }
+  $('#kNuP').oninput = $('#kNuD').oninput = function () { A.nuDirty = true; };
+  $('#nuReset').onclick = function () { $('#kNuP').value = window.CONFIG.NUDGE_PENDING; $('#kNuD').value = window.CONFIG.NUDGE_DONE; A.nuDirty = true; toast('Default messages loaded — tap Save to use them'); };
+  $('#nuSave').onclick = function () {
+    var b = this, c = A.camp; b.disabled = true;
+    call('saveCampaign', { id: c.id, name: c.name, type: c.type, perDay: c.perDay, startDate: c.startDate, endDate: c.endDate, message: c.message,
+                           introDate: c.introDate, introTime: c.introTime, nudgePending: $('#kNuP').value, nudgeDone: $('#kNuD').value })
+      .then(function (r) { Object.assign(A.camp, r); A.nuDirty = false; renderDash(); toast('Saved 🙏 The 💬 WhatsApp buttons above now use these'); })
       .catch(function (e) { toast('⚠️ ' + e.message); }).then(function () { b.disabled = false; });
   };
   function nudgeText(v) {   // warm check-in message from the admin to a volunteer (editable per campaign)
