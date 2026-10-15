@@ -60,7 +60,7 @@ function doPost(e) {
     var p = JSON.parse(e.postData.contents), cache = CacheService.getScriptCache();
     var seen = p.reqId && p.action === 'submit' ? cache.get('req_' + p.reqId) : null;
     if (seen) return ContentService.createTextOutput(seen).setMimeType(ContentService.MimeType.JSON);   // retried save: don't save twice
-    var needLock = ['feed', 'adminLogin', 'adminData', 'myCampaigns', 'campaigns', 'allVolunteers', 'activity', 'admins'].indexOf(p.action) < 0;
+    var needLock = ['feed', 'adminLogin', 'adminData', 'myCampaigns', 'campaigns', 'allVolunteers', 'activity', 'admins','callerHistory'].indexOf(p.action) < 0;
     if (p.action === 'state') {   // most refreshes change nothing: answer them without waiting in the queue
       try { out = { ok: true, data: dispatch(SheetStore, SheetAuth, 'state', Object.assign({}, p, { _noAssign: true })) }; needLock = false; }
       catch (e1) { if (String(e1 && e1.message) !== 'NEED_LOCK') throw e1; _cache = {}; }
