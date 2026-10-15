@@ -303,11 +303,46 @@
       '<div class="how">After sending, tap what happened 👇</div>' +
       '<div class="status-grid wa-grid" id="grid">' + statusButtons(null) + '</div>' +
       '</div>';
-    var open = $('#contactArea .wa-open'); if (open) open.onclick = function () { S.opened[c.id] = 1; };
+    var open = $('#contactArea .wa-open'); if (open) open.onclick = function (e) {
+      if (S.opened[c.id]) return;   // re-opening the same chat is not a new message
+      var warn = paceWarning(); if (warn) { e.preventDefault(); return showPace(warn, c, open.href); }
+      S.opened[c.id] = 1; logSend();
+    };
     $('#grid').onclick = function (e) {
       var b = e.target.closest('.sbtn'); if (!b) return;
       if (c.phone && !S.opened[c.id]) { FX.buzz([30, 40, 30]); return toast('📲 Please open WhatsApp and send the message first 🙏', 2600); }
       FX.buzz(15); saveWa(c.id, b.dataset.s);
+    };
+  }
+
+  /* WhatsApp pace: sending too fast can get a number restricted, so warn gently — the volunteer can always continue.
+     Kept per phone (not per campaign), because the limit is on the volunteer's WhatsApp number. */
+  var PACE = [   // [messages, within minutes, title, text] — the firmer one first
+    [20, 30, '🌿 Please take a longer break', 'You have sent 20 messages in the last 30 minutes. WhatsApp may restrict your number for 24 hours if messages go out this fast. A 15–20 minute break keeps your number safe 🙏'],
+    [10, 20, '🌸 You’re sending quite fast', 'You have sent 10 messages in the last 20 minutes. If you send this fast, WhatsApp may restrict your number for 24 hours. Please take a short break and continue after some time 🙏']
+  ];
+  function paceKey() { return 'icc_waSends_' + S.phone; }
+  function jget(k) { try { return JSON.parse(LS.get(k)); } catch (e) { return null; } }
+  function jset(k, v) { LS.set(k, JSON.stringify(v)); }
+  function sends() { var a = jget(paceKey()); return Array.isArray(a) ? a : []; }
+  function logSend() {   // keep only the last 30 minutes
+    var now = Date.now(); jset(paceKey(), sends().filter(function (t) { return now - t < 30 * 60000; }).concat([now]));
+  }
+  function paceWarning() {
+    var now = Date.now(), a = sends(), ack = jget(paceKey() + '_ack') || {};
+    for (var i = 0; i < PACE.length; i++) {
+      var r = PACE[i], n = a.filter(function (t) { return now - t < r[1] * 60000; }).length;
+      if (n >= r[0] && !(ack[r[0]] > now)) return r;
+    }
+    return null;
+  }
+  function showPace(r, c, href) {
+    $('#paceTitle').textContent = r[2]; $('#paceText').textContent = r[3];
+    $('#pace').classList.remove('hidden'); FX.buzz([40, 60, 40]);
+    $('#paceWait').onclick = function () { $('#pace').classList.add('hidden'); };
+    $('#paceGo').onclick = function () {   // their choice: don't ask again for this level until the window has passed
+      var ack = jget(paceKey() + '_ack') || {}; ack[r[0]] = Date.now() + r[1] * 60000; jset(paceKey() + '_ack', ack);
+      $('#pace').classList.add('hidden'); S.opened[c.id] = 1; logSend(); window.open(href, '_blank');
     };
   }
 
