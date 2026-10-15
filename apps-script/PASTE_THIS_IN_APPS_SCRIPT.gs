@@ -117,7 +117,7 @@ function missed(s) { return s === 'no_answer' || s === 'wrong_number' || s === '
 // A WhatsApp on its own (no conversation) is not a completed call — same as "Didn't receive"
 function counted(s) { return s !== 'no_answer' && s !== 'shared_wa'; }
 var TABLES = {
-  Campaigns: ['id', 'name', 'type', 'startDate', 'endDate', 'perDay', 'message', 'introDate', 'introTime', 'active', 'createdAt', 'createdBy', 'deleted'],
+  Campaigns: ['id', 'name', 'type', 'startDate', 'endDate', 'perDay', 'message', 'introDate', 'introTime', 'active', 'createdAt', 'createdBy', 'deleted', 'nudgePending', 'nudgeDone'],
   Admins:    ['phone', 'name', 'password', 'access', 'active', 'createdAt', 'createdBy'],   // access: whatsapp | call | both
   AdminLog:  ['ts', 'adminName', 'adminPhone', 'campaignId', 'campaignName', 'action', 'details'],
   Contacts: ['id', 'name', 'phone', 'email', 'programs', 'reservedFor', 'assignedTo', 'assignedAt',
@@ -548,7 +548,8 @@ function createCore(store, camp) {
 function campaignView(c) {
   return { id: c.id, name: c.name, type: c.type === 'whatsapp' ? 'whatsapp' : 'call', startDate: c.startDate, endDate: c.endDate,
            perDay: Number(c.perDay) || (c.type === 'whatsapp' ? 30 : 2), message: c.message || '', introDate: c.introDate || '',
-           introTime: c.introTime || '', active: String(c.active) !== 'false', createdAt: c.createdAt, createdBy: c.createdBy || '' };
+           introTime: c.introTime || '', active: String(c.active) !== 'false', createdAt: c.createdAt, createdBy: c.createdBy || '',
+           nudgePending: c.nudgePending || '', nudgeDone: c.nudgeDone || '' };
 }
 function findCampaign(store, id) {
   var c = store.all('Campaigns').filter(function (x) { return String(x.id) === String(id); })[0];
@@ -581,6 +582,8 @@ function saveCampaign(store, p) {
   row.name = name; row.startDate = p.startDate; row.endDate = p.endDate;
   row.perDay = Number(p.perDay) || (row.type === 'whatsapp' ? 30 : 2);
   row.message = String(p.message || ''); row.introDate = p.introDate || ''; row.introTime = p.introTime || '';
+  if (typeof p.nudgePending === 'string') row.nudgePending = p.nudgePending;   // admin's WhatsApp to a volunteer
+  if (typeof p.nudgeDone === 'string') row.nudgeDone = p.nudgeDone;
   if (p.active !== undefined) row.active = String(p.active);
   if (isNew) store.insert('Campaigns', row); else store.update('Campaigns', row);
   if (isNew && p.volunteers && p.volunteers.length) {   // existing volunteers picked while creating; contacts come with the upload
