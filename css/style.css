@@ -290,3 +290,6 @@ textarea { width: 100%; min-height: 64px; border-radius: 12px; border: 1.5px sol
 .mini.del.sure { background: var(--red); color: #fff; }
 
 .loc-in { width: 100%; margin-top: 12px; padding: 12px; border-radius: 12px; border: 1.5px solid var(--saffron, #E08A1E); font: inherit; font-size: 15px; }
+.pace-box { padding-top: 22px; }
+.pace-emoji { font-size: 48px; }
+.pace-box #paceGo { margin-top: 8px; background: none; border: 0; color: var(--muted); text-decoration: underline; font-size: 14px; }
