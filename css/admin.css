@@ -50,3 +50,8 @@
 .fu-form input { min-width: 0; font: 12px var(--sans); padding: 4px 6px; border: 1.5px solid var(--line); border-radius: 7px; background: #fff; }
 .fu-form .fu-by { width: 78px; }
 .fu-form .fu-date { width: 112px; }
+
+/* volunteer totals + history sheet */
+.hist-open { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--maroon); cursor: pointer; text-align: left; text-decoration: underline dotted; }
+.c-tot { font-size: 12px; color: var(--muted, #7a6a5a); margin-top: 2px; }
+.hist-list { max-height: 60vh; overflow-y: auto; margin: 0 0 12px; padding: 0; }
