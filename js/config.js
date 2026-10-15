@@ -42,6 +42,11 @@ window.CONFIG = {
     "In love, light & laughter,\n" +
     "Isha Volunteers 🪔",
 
+  // DEFAULT admin WhatsApp to a volunteer (dashboard 💬 button); each campaign can change it.
+  // {name} = volunteer first name, {done} {target} {left} = today's numbers, {work} = calls / messages
+  NUDGE_PENDING: 'Namaskaram {name} 🙏\n\nHope you are doing well. A gentle reminder for today’s Karma Sadhana {work}: {done} of {target} done, {left} more to go 🌸\n\nThank you for offering your time to make this happen.',
+  NUDGE_DONE: 'Namaskaram {name} 🙏\n\nYou have completed today’s Karma Sadhana {work} 🌸 Thank you so much for your offering!',
+
   // Quotes shown across the app. Please verify wording against Isha's official sources before going live.
   // Add Sadhguru's volunteering quotes from official Isha material here, one per line.
   QUOTES: [

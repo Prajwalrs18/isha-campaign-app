@@ -146,6 +146,7 @@
   function resetCampForm() {
     A.kEdit = null; $('#kTitle').textContent = '➕ New campaign'; $('#kSave').textContent = 'Create campaign';
     ['#kName', '#kMsg', '#kIntro', '#kIntroT'].forEach(function (x) { $(x).value = ''; });
+    $('#kNuP').value = window.CONFIG.NUDGE_PENDING; $('#kNuD').value = window.CONFIG.NUDGE_DONE;
     $('#kType').disabled = false; $('#kType').value = 'whatsapp';
     $('#kStart').value = istDay(); $('#kEnd').value = addDays(istDay(), 6);
     $('#kActiveRow').classList.add('hidden'); $('#kCancel').classList.add('hidden');
@@ -157,6 +158,7 @@
     $('#kName').value = c.name; $('#kType').value = c.type; $('#kType').disabled = true;
     $('#kPer').value = c.perDay; $('#kStart').value = c.startDate; $('#kEnd').value = c.endDate;
     $('#kMsg').value = c.message || window.CONFIG.WHATSAPP_TEMPLATE; $('#kIntro').value = c.introDate || ''; $('#kIntroT').value = c.introTime || '';
+    $('#kNuP').value = c.nudgePending || window.CONFIG.NUDGE_PENDING; $('#kNuD').value = c.nudgeDone || window.CONFIG.NUDGE_DONE;
     $('#kActive').checked = c.active; $('#kActiveRow').classList.remove('hidden'); $('#kCancel').classList.remove('hidden');
     renderVolPick(); kTypeChanged(); $('#campFormCard').scrollIntoView({ behavior: 'smooth' });
   }
@@ -164,7 +166,8 @@
   $('#kSave').onclick = function () {
     var b = this; b.disabled = true;
     var p = { name: $('#kName').value, type: $('#kType').value, perDay: $('#kPer').value, startDate: $('#kStart').value, endDate: $('#kEnd').value,
-              message: $('#kMsg').value, introDate: $('#kIntro').value, introTime: $('#kIntroT').value };
+              message: $('#kMsg').value, introDate: $('#kIntro').value, introTime: $('#kIntroT').value,
+              nudgePending: $('#kNuP').value, nudgeDone: $('#kNuD').value };
     if (A.kEdit) { p.id = A.kEdit.id; p.active = $('#kActive').checked; }
     else p.volunteers = A.vols.filter(function (v) { return A.kSel[v.phone]; });
     call('saveCampaign', p).then(function (c) {
@@ -314,7 +317,7 @@
     $('#bars').innerHTML = Object.keys(ST).map(function (k) {
       return '<div class="bar"><span>' + ST[k].emoji + ' ' + ST[k].label + '</span><div class="track"><div class="fill" style="width:' + (100 * (c[k] || 0) / max) + '%"></div></div><span class="n">' + (c[k] || 0) + '</span></div>';
     }).join('') + '<p class="muted tiny" style="margin:8px 0 0">' + c.unreachable + ' contacts did not pick up after 3 tries.</p>';
-    var rows = d.callers.filter(function (v) { return v.active; }).sort(function (a, b) { return (a.todayDone / a.perDay) - (b.todayDone / b.perDay); });
+    var rows = d.callers.filter(function (v) { return v.active; }).sort(function (a, b) { return (a.todayDone / a.perDay) - (b.todayDone / b.perDay) || (b.perDay - b.todayDone) - (a.perDay - a.todayDone) || String(a.name).localeCompare(b.name); });
     if (!$('#dashCallers').contains(document.activeElement)) $('#dashCallers').innerHTML = '<tr><th>Caller</th><th>Follow-up</th><th>Today</th><th class="num">Dials</th><th class="num">Total</th><th class="num">Intro</th><th class="num">Reg</th><th class="num">Days left</th></tr>' +
       (rows.length ? rows.map(function (v) {
         var pct = Math.min(100, 100 * v.todayDone / v.perDay);
@@ -366,11 +369,11 @@
     call('syncAll').then(function (r) { toast('Synced 🙏 ' + r.unassigned + ' contacts unassigned'); return load(); })
       .catch(function (e) { toast('⚠️ ' + e.message); }).then(function () { b.disabled = false; });
   };
-  function nudgeText(v) {   // warm check-in message from the admin to a caller
-    var n = firstName(v.name), left = v.perDay - v.todayDone;
-    return left > 0
-      ? 'Namaskaram ' + n + ' 🙏\n\nHope you are doing well. A gentle reminder for today’s Karma Sadhana ' + W(2) + ': ' + v.todayDone + ' of ' + v.perDay + ' done, ' + left + ' more to go 🌸\n\nThank you for offering your time to make this happen.'
-      : 'Namaskaram ' + n + ' 🙏\n\nYou have completed today’s Karma Sadhana ' + W(2) + ' 🌸 Thank you so much for your offering!';
+  function nudgeText(v) {   // warm check-in message from the admin to a volunteer (editable per campaign)
+    var c = A.camp || {}, C = window.CONFIG, left = v.perDay - v.todayDone;
+    var t = left > 0 ? (c.nudgePending || C.NUDGE_PENDING) : (c.nudgeDone || C.NUDGE_DONE);
+    return t.split('{name}').join(firstName(v.name)).split('{done}').join(v.todayDone).split('{target}').join(v.perDay)
+      .split('{left}').join(Math.max(0, left)).split('{work}').join(W(2));
   }
 
   /* callers */
