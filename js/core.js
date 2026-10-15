@@ -504,6 +504,16 @@ function saveCampaign(store, p) {
   }
   return campaignView(row);
 }
+// A volunteer's name / number is kept per campaign: when the admin edits it in one campaign, update every other campaign too
+function syncVolunteerElsewhere(store, campId, p) {
+  var old = normPhone(p.phone);
+  store.all('Campaigns').filter(notDeleted).forEach(function (c) {
+    if (String(c.id) === String(campId)) return;
+    if (!store.all('Callers_' + c.id).some(function (v) { return normPhone(v.phone) === old; })) return;
+    try { createCore(scoped(store, c.id), campaignView(c)).saveCaller({ phone: old, newPhone: p.newPhone, name: p.name, skipAssign: true }); }
+    catch (e) {}   // e.g. the new number is already a volunteer in that campaign: leave that one as it is
+  });
+}
 // Admin: everyone who has volunteered in any campaign (to reuse them in a new one)
 function allVolunteers(store) {
   var seen = {}, out = [];
@@ -627,6 +637,7 @@ function dispatch(store, auth, action, p) {
   var core = createCore(scoped(store, camp.id), camp);
   if (!core[action]) throw new Error('Unknown action ' + action);
   r = core[action](p);
+  if (action === 'saveCaller' && !r.created && (p.name || p.newPhone)) syncVolunteerElsewhere(store, camp.id, p);
   logAdmin(store, admin, camp, action, p, r);
   return r;
 }
