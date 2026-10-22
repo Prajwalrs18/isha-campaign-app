@@ -43,7 +43,9 @@ var MAX_ATTEMPTS = 3;        // "Didn't receive" contacts are retried up to 3 ti
 var RETRY_GAP_HOURS = 20;    // ...and not before 20 hours have passed
 
 function normPhone(p) {
-  var d = String(p == null ? '' : p).replace(/\D/g, '');
+  // two numbers in one cell ("98xxx / 97xxx"): keep the first
+  var d = String(p == null ? '' : p).split(/[\/,;|]|\bor\b/i)[0].replace(/\D/g, '');
+  if (d.length > 13) d = d.slice(0, 10);   // already joined into one long number: first 10 digits
   if (d.length === 12 && d.indexOf('91') === 0) d = d.slice(2);
   if (d.length === 11 && d.charAt(0) === '0') d = d.slice(1);
   return d;
