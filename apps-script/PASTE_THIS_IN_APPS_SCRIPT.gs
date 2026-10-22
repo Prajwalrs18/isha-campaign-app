@@ -186,6 +186,25 @@ function createCore(store, camp) {
     if ((Number(x.attempts) || 0) >= MAX_ATTEMPTS) return false;
     return !x.lastCalledAt || (Date.now() - new Date(x.lastCalledAt).getTime()) >= RETRY_GAP_HOURS * 3600000;
   }
+  /* A volunteer still has calls to make today but nothing left in their own share.
+     Hand them uncalled contacts held by others beyond what those holders can call today:
+     everything held by a deactivated volunteer, or the extra of the one holding the most. */
+  function borrowable(contacts, log, phone, today) {
+    var spare = {}, out = [];
+    store.all('Callers').forEach(function (c) {
+      var v = callerView(c), ph = v.phone; if (ph === phone) return;
+      var held = contacts.filter(function (x) { return normPhone(x.reservedFor) === ph && !x.assignedTo; });
+      var fresh = held.filter(function (x) { return !x.status; });
+      if (!v.active) { spare[ph] = held.filter(function (x) { return !x.status || eligible(Object.assign({}, x, { reservedFor: '' }), phone); }); return; }
+      var doneToday = log.filter(function (l) { return normPhone(l.callerPhone) === ph && isCall(l) && istDay(l.ts) === today && counted(l.status); }).length;
+      var inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === ph; }).length;
+      var keep = v.daysLeft > 0 ? Math.max(0, v.perDay - doneToday - inHand) : 0;   // what they can still call today stays with them
+      if (fresh.length > keep) spare[ph] = fresh.slice(keep);
+    });
+    Object.keys(spare).sort(function (a, b) { return spare[b].length - spare[a].length; })
+      .forEach(function (k) { out = out.concat(spare[k]); });
+    return out;
+  }
   function rank(x, phone) {  // lower = picked first
     return (x.reservedFor && normPhone(x.reservedFor) === phone ? 0 : 10) + (x.status ? 5 : 0);
   }
@@ -251,11 +270,13 @@ function createCore(store, camp) {
     if (inHand.length < want && !over && !cv.notStarted && room()) {
       var cands = contacts.filter(function (x) { return eligible(x, phone); });
       cands.sort(function (a, b) { return rank(a, phone) - rank(b, phone) || a._i - b._i; });
+      if (!cands.length) cands = borrowable(contacts, log, phone, today);   // own share used up: help with someone else's extra
       if (!cands.length && !inHand.length) poolEmpty = true;
       if (cands.length && p._noAssign) throw new Error('NEED_LOCK');   // a new contact must be handed out: retry inside the lock
       while (inHand.length < want && cands.length && room()) {
         var pick = cands.shift();
         pick.assignedTo = phone; pick.assignedAt = now();
+        if (pick.reservedFor && normPhone(pick.reservedFor) !== phone) pick.reservedFor = phone;   // borrowed: now theirs
         store.update('Contacts', pick);
         inHand.push(pick);
       }
