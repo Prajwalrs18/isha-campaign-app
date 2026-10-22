@@ -61,6 +61,10 @@ function doPost(e) {
     var p = JSON.parse(e.postData.contents), cache = CacheService.getScriptCache();
     var seen = p.reqId && p.action === 'submit' ? cache.get('req_' + p.reqId) : null;
     if (seen) return ContentService.createTextOutput(seen).setMimeType(ContentService.MimeType.JSON);   // retried save: don't save twice
+    // Read-only answers everyone asks for again and again: share them for a few seconds instead of re-reading the Sheet
+    var ckey = p.action === 'feed' ? 'c_feed_' + p.campaignId : p.action === 'myCampaigns' ? 'c_my_' + normPhone(p.phone) : '';
+    var hit = ckey && cache.get(ckey);
+    if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
     var needLock = ['feed', 'adminLogin', 'adminData', 'myCampaigns', 'campaigns', 'allVolunteers', 'activity', 'admins','callerHistory'].indexOf(p.action) < 0;
     if (p.action === 'state') {   // most refreshes change nothing: answer them without waiting in the queue
       try { out = { ok: true, data: dispatch(SheetStore, SheetAuth, 'state', Object.assign({}, p, { _noAssign: true })) }; needLock = false; }
@@ -68,6 +72,7 @@ function doPost(e) {
     }
     if (needLock) { lock.waitLock(45000); locked = true; }
     if (!out) out = { ok: true, data: dispatch(SheetStore, SheetAuth, p.action, p) };
+    if (ckey && out.ok) { var cj = JSON.stringify(out); if (cj.length < 90000) cache.put(ckey, cj, p.action === 'feed' ? 20 : 120); }
     if (p.reqId && p.action === 'submit') { var js = JSON.stringify(out); if (js.length < 90000) cache.put('req_' + p.reqId, js, 600); }
   } catch (err) {
     out = { ok: false, error: String(err && err.message || err) };
