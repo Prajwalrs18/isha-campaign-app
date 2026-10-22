@@ -540,7 +540,7 @@
       var h = Object.keys(raw[0]).map(function (k) { return k; }), low = function (re) { return { test: function (k) { return re.test(k.toLowerCase().trim()); } }; };
       var cn = pick(h, [low(/^name$/), low(/full ?name/), low(/name/)]);
       var cp = pick(h, [low(/^phone( number)?$/), low(/mobile/), low(/phone/), low(/whatsapp/), low(/contact/)]);
-      var ce = pick(h, [low(/e-?mail/)]);
+      var ce = pick(h, [low(/e-?mail/), low(/^mail/)]);
       var cg = pick(h, [low(/^programs?$/), low(/program/)]);
       if (!cp) throw new Error('Could not find a Phone column. Found: ' + h.join(', '));
       var extra = ($('#uProg') && $('#uProg').value.trim()) || '';
