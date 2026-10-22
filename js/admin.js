@@ -420,7 +420,8 @@
     $('#assignPreview').textContent = '→ ' + $('#cPer').value + ' ' + W(2) + ' × ' + days + ' days = ' + n + ' contacts will be assigned' +
       (n > A.d.counts.unassigned ? ' (not enough left, so the list will be split fairly with the other volunteers)' : '');
     var cap = A.d.dailyCapacity, rem = A.d.counts.unassigned;
-    $('#poolInfo').innerHTML = '<b>' + rem + '</b> of ' + A.d.counts.total + ' contacts are not yet assigned to any volunteer.' +
+    var uncalled = A.d.contacts.filter(function (x) { return !x.status; }).length;
+    $('#poolInfo').innerHTML = '<b>' + uncalled + '</b> of ' + A.d.counts.total + ' contacts are not ' + (isWA ? 'messaged' : 'called') + ' yet: <b>' + (uncalled - rem) + '</b> are in active volunteers’ lists, <b>' + rem + '</b> are not given to anyone.' +
       (rem && Number($('#cPer').value) && autoDays() ? ' That needs about <b>' + Math.ceil(rem / (Number($('#cPer').value) * autoDays())) + '</b> more volunteers at this pace.' : '');
   }
   $('#cPer').oninput = updatePreview;
