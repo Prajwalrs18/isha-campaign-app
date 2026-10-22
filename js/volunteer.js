@@ -85,8 +85,25 @@
     $('#loginErr').textContent = '';
     if (p.length !== 10) { $('#loginErr').textContent = 'Please enter your 10-digit mobile number'; return; }
     var b = $('#loginBtn'); b.disabled = true; b.textContent = 'Opening…';
+    // Coming back (saved number): open from the campaign list saved last time at once, and refresh that list in the background
+    var cached = null; try { cached = JSON.parse(LS.get('icc_camps_' + p)); } catch (e) {}
+    if (resume && cached && cached.length) {
+      S.phone = p; S.camps = cached;
+      if (cached.length === 1) openCampaign(cached[0], true); else showPicker();
+      api('myCampaigns', { phone: p }).then(function (r) {
+        S.camps = r.campaigns; LS.set('icc_camps_' + p, JSON.stringify(r.campaigns));
+        var still = S.camp && S.camps.some(function (c) { return c.id === S.camp.id; });
+        if (S.camp && !still) { if (S.camps.length === 1) openCampaign(S.camps[0], true); else showPicker(); }   // that campaign was closed
+        else if (!$('#pick').classList.contains('hidden')) showPicker();   // still on the list: show fresh counts
+        $('#switchBtn').classList.toggle('hidden', S.camps.length < 2);
+      }).catch(function (e) {
+        if (/not added/.test(e && e.message)) { LS.set('icc_camps_' + p, null); $('#app').classList.add('hidden'); $('#pick').classList.add('hidden'); $('#login').classList.remove('hidden'); $('#loginErr').textContent = e.message; }
+      });
+      b.disabled = false; b.textContent = 'Begin my Karma Sadhana 🌸';
+      return;
+    }
     api('myCampaigns', { phone: p }).then(function (r) {
-      S.phone = p; S.camps = r.campaigns; LS.set('icc_phone', p);
+      S.phone = p; S.camps = r.campaigns; LS.set('icc_phone', p); LS.set('icc_camps_' + p, JSON.stringify(r.campaigns));
       // only one campaign: go straight in. More than one: always show the list so the volunteer picks
       if (S.camps.length === 1) return openCampaign(S.camps[0], resume);
       showPicker();
