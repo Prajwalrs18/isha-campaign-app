@@ -228,13 +228,11 @@
 
   function renderContact() {
     var st = S.st, area = $('#contactArea');
-    if (S.isWA) {   // first person in hand that this phone hasn't already marked
-      var nx = st.inHand.filter(function (x) { return !S.marked[x.id]; })[0];
-      if (nx) return renderWaContact(nx);
-      if (S.inflight) { S.shownId = null; area.innerHTML = '<div class="card contact wa-card"><p class="muted" style="text-align:center;margin:30px 0">🌸 Getting the next person…</p></div>'; return; }
-    }
-    if (st.inHand.length) {
-      var c = st.inHand[0];
+    var nx = st.inHand.filter(function (x) { return !S.marked[x.id]; })[0];   // first person in hand not already saved on this phone
+    if (S.isWA && nx) return renderWaContact(nx);
+    if (!nx && S.inflight) { S.shownId = null; area.innerHTML = '<div class="card contact' + (S.isWA ? ' wa-card' : '') + '"><p class="muted" style="text-align:center;margin:30px 0">🌸 Getting the next person…</p></div>'; return; }
+    if (nx) {
+      var c = nx;
       var progs = String(c.programs || '').split(',').map(function (s) { return s.trim(); }).filter(String);
       area.innerHTML =
         '<div class="card contact">' +
@@ -392,7 +390,32 @@
     $('#loginErr').textContent = 'Your number was updated by the admin. Please log in with your new number 🙏';
     return true;
   }
+  /* Call card: show the next person at once and save in the background, one after another (like WhatsApp) */
+  function saveCall(id, status, notes) {
+    if (!status || S.marked[id]) return;
+    S.marked[id] = 1; S.inflight++;
+    var t = S.st.today, counts = counted(status);
+    t.dials++; if (counts) { t.done++; S.st.left = Math.max(0, (S.st.left || 0) - 1); }
+    S.sel = null; S.note = ''; S.loc = '';
+    render(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    S.chain = S.chain.then(function () {
+      var prevTotal = S.st.stats.total, prevTeam = S.st.team ? S.st.team.dials : 0; S.prevLeft = S.st.left + (counts ? 1 : 0);
+      return api('submit', withCamp({ contactId: id, status: status, notes: (notes || '').trim() })).then(function (st) {
+        S.inflight--;
+        if (S.inflight) { st.today = S.st.today; st.left = S.st.left; }   // keep the faster local counts while more saves are queued
+        S.st = st; render(); celebrateOwn(st.saved, st.milestone, prevTotal);
+        var sm = SECTOR_MILESTONES.filter(function (m) { return prevTeam < m && st.team.dials >= m; }).pop();
+        if (sm) setTimeout(function () { celebrate('🎊', squad() + ' crossed ' + sm + ' ' + W(sm) + '!', 'And your ' + W(1) + ' took us there. Thank you, everyone 🙏', true); }, 2500);
+      }).catch(function (e) {
+        S.inflight--;
+        if (numberGone(e)) return;
+        toast('⚠️ Not saved: ' + e.message + ' — please mark this person again', 5000); delete S.marked[id];
+        return api('state', withCamp()).then(function (st) { S.st = st; render(); }).catch(function () {});
+      });
+    });
+  }
   function save(id, status, notes, fromList) {
+    if (!fromList) return saveCall(id, status, notes);
     if (S.busy || !status) return;
     S.busy = true;
     var prevTotal = S.st.stats.total, prevTeam = S.st.team ? S.st.team.dials : 0;

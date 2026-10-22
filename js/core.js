@@ -171,8 +171,8 @@ function createCore(store, camp) {
     var inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === phone; });
     var over = !cv.active || cv.daysLeft <= 0, poolEmpty = false;
 
-    // WhatsApp: keep the NEXT person ready too, so the volunteer's screen moves on instantly after each tap
-    var want = camp.type === 'whatsapp' ? 2 : 1;
+    // keep the NEXT person ready too, so the volunteer's screen moves on instantly after each save
+    var want = 2;
     var room = function () { return done + inHand.length < cv.perDay || (p.extra && !inHand.length); };
     if (inHand.length < want && !over && !cv.notStarted && room()) {
       var cands = contacts.filter(function (x) { return eligible(x, phone); });
