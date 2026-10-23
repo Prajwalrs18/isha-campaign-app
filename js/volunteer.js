@@ -236,7 +236,7 @@
       var progs = String(c.programs || '').split(',').map(function (s) { return s.trim(); }).filter(String);
       area.innerHTML =
         '<div class="card contact">' +
-        '<div class="c-label">' + (st.today.done >= st.today.target ? 'Extra call ✨' : 'Your next call') + '</div>' +
+        '<div class="c-label">' + (st.today.done < st.today.target ? 'Your next call' : st.today.pending ? 'Catch-up call 🌱' : 'Extra call ✨') + '</div>' +
         '<h2 class="c-name">' + nameOf(c) + '</h2>' +
         '<div class="chips">' + progs.map(function (p) { return '<span class="chip">' + esc(p) + '</span>'; }).join('') +
         (c.attempts ? '<span class="chip soft">Try #' + (c.attempts + 1) + '</span>' : '') + '</div>' +

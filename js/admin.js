@@ -168,7 +168,7 @@
     if (A.kEdit) { p.id = A.kEdit.id; p.active = $('#kActive').checked; }
     else p.volunteers = A.vols.filter(function (v) { return A.kSel[v.phone]; });
     call('saveCampaign', p).then(function (c) {
-      toast(A.kEdit ? 'Saved 🙏' : 'Campaign created 🌸 Now upload its contacts', 4000);
+      toast(A.kEdit ? 'Saved 🙏' + (c.extended ? ' · ' + c.extended + ' volunteers now continue until ' + c.endDate : '') : 'Campaign created 🌸 Now upload its contacts', 5000);
       var created = !A.kEdit;
       return refreshCamps().then(function () { if (created) openCamp(A.camps.filter(function (x) { return x.id === c.id; })[0]); });
     }).catch(function (e) { toast('⚠️ ' + e.message); }).then(function () { b.disabled = false; });
