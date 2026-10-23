@@ -64,3 +64,7 @@
   #campList .camp-btns .btn { flex: 1; }
   #campList .camp-btns .mini { min-height: 38px; padding: 0 14px; }
 }
+
+/* switching campaigns: hide the old numbers until the new ones arrive */
+#aApp.loading .a-view { display: none !important; }
+.a-loading { text-align: center; padding: 40px 16px; color: var(--muted, #7a6a5a); font-weight: 600; }
