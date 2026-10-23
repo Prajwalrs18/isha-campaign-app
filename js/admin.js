@@ -185,14 +185,22 @@
     $('#fStatus').innerHTML = ''; A.sel = {}; A.page = 0; A.sumDay = null;
     $('#aCamps').classList.add('hidden'); $('#aApp').classList.remove('hidden');
     $('#aTitle').textContent = (isWA ? '💬 ' : '📞 ') + c.name + (window.isDemo ? ' · DEMO' : '');
-    load().then(function () {   // a new, empty campaign: go straight to uploading its contacts
+    A.d = null; $('#aApp').classList.add('loading'); $('#aLoading').classList.remove('hidden');   // never show the previous campaign's numbers
+    load().then(function () {
+      if (A.camp !== c) return;   // another campaign was opened meanwhile
+      $('#aApp').classList.remove('loading'); $('#aLoading').classList.add('hidden');
+      // a new, empty campaign: go straight to uploading its contacts
       var tab = A.d && !A.d.counts.total ? 'upload' : 'callers';
       document.querySelector('.a-tabs [data-t="' + tab + '"]').click();
     });
   }
   function load() {
     if (!A.camp) return Promise.resolve();
-    return call('adminData').then(function (d) { A.d = d; renderAll(); }).catch(function (e) { toast('⚠️ ' + e.message); });
+    var id = A.camp.id;
+    return call('adminData').then(function (d) {
+      if (!A.camp || A.camp.id !== id) return;   // answer for a campaign that is no longer open: ignore it
+      A.d = d; renderAll();
+    }).catch(function (e) { toast('⚠️ ' + e.message); });
   }
   $('#refresh').onclick = function () { load().then(function () { toast('Refreshed'); }); };
   setInterval(function () { if (A.token && A.camp && !document.hidden && !$('#aApp').classList.contains('hidden')) load(); }, 60000);
