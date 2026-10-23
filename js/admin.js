@@ -391,7 +391,7 @@
   function nudgeText(v) {   // warm check-in message from the admin to a volunteer (editable per campaign)
     var c = A.camp || {}, C = window.CONFIG, left = v.perDay - v.todayDone;
     var t = left > 0 ? (c.nudgePending || C.NUDGE_PENDING) : (c.nudgeDone || C.NUDGE_DONE);
-    return t.split('{name}').join(firstName(v.name)).split('{done}').join(v.todayDone).split('{target}').join(v.perDay)
+    return t.split('{fullname}').join(String(v.name || '').trim()).split('{name}').join(firstName(v.name)).split('{done}').join(v.todayDone).split('{target}').join(v.perDay)
       .split('{left}').join(Math.max(0, left)).split('{work}').join(W(2));
   }
 

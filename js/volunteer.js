@@ -25,6 +25,7 @@
   function nameOf(c) { return c.name ? esc(c.name) : '<span class="muted">Name not given</span>'; }
   function quote() { return C.QUOTES[Math.floor(Math.random() * C.QUOTES.length)]; }
   function titleFirst(n) { var f = firstName(n).toLowerCase(); return f.charAt(0).toUpperCase() + f.slice(1); }
+  function titleFull(n) { return String(n || '').trim().split(/\s+/).map(titleFirst).join(' '); }
   function ago(iso) {
     var s = (Date.now() - new Date(iso).getTime()) / 1000;
     if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + ' min ago';
@@ -48,7 +49,8 @@
     var p = c.phone.length === 10 ? '91' + c.phone : c.phone;
     var txt = C.WHATSAPP_TEMPLATE
       .replace(c.programs ? '{programs}' : ' ({programs})', c.programs || '')
-      .replace(titleFirst(c.name) ? '{name}' : ' {name}', titleFirst(c.name)).replace('{caller}', titleFirst(S.st.caller.name));
+      .replace(titleFirst(c.name) ? '{name}' : ' {name}', titleFirst(c.name)).replace('{caller}', titleFirst(S.st.caller.name))
+      .replace(titleFull(c.name) ? '{fullname}' : ' {fullname}', titleFull(c.name)).replace('{callerfull}', titleFull(S.st.caller.name));
     return 'https://wa.me/' + p + '?text=' + encodeURIComponent(txt);
   }
 
