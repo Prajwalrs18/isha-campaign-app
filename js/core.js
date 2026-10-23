@@ -85,8 +85,10 @@ function createCore(store, camp) {
     return { id: x.id, name: x.name, phone: normPhone(x.phone), email: x.email, programs: x.programs,
              attempts: Number(x.attempts) || 0, status: x.status, notes: x.notes, lastCalledAt: x.lastCalledAt };
   }
+  // a contact handed out on an earlier day but never saved is free again for anyone
+  function heldToday(x) { return !!x.assignedTo && (!x.assignedAt || istDay(x.assignedAt) === istDay()); }
   function eligible(x, phone) {
-    if (x.assignedTo) return false;
+    if (heldToday(x)) return false;
     if (x.reservedFor && normPhone(x.reservedFor) !== phone) return false;
     if (!x.status) return true;
     if (x.status !== 'no_answer') return false;
@@ -94,19 +96,17 @@ function createCore(store, camp) {
     return !x.lastCalledAt || (Date.now() - new Date(x.lastCalledAt).getTime()) >= RETRY_GAP_HOURS * 3600000;
   }
   /* A volunteer still has calls to make today but nothing left in their own share.
-     Hand them uncalled contacts held by others beyond what those holders can call today:
-     everything held by a deactivated volunteer, or the extra of the one holding the most. */
+     Hand them uncalled contacts from others' shares (not the ones on someone's screen today):
+     a deactivated volunteer's first, then from whoever holds the most. When the list runs short,
+     whoever is calling gets the next person. */
   function borrowable(contacts, log, phone, today) {
     var spare = {}, out = [];
     store.all('Callers').forEach(function (c) {
       var v = callerView(c), ph = v.phone; if (ph === phone) return;
-      var held = contacts.filter(function (x) { return normPhone(x.reservedFor) === ph && !x.assignedTo; });
+      var held = contacts.filter(function (x) { return normPhone(x.reservedFor) === ph && !heldToday(x); });
       var fresh = held.filter(function (x) { return !x.status; });
       if (!v.active) { spare[ph] = held.filter(function (x) { return !x.status || eligible(Object.assign({}, x, { reservedFor: '' }), phone); }); return; }
-      var doneToday = log.filter(function (l) { return normPhone(l.callerPhone) === ph && isCall(l) && istDay(l.ts) === today && counted(l.status); }).length;
-      var inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === ph; }).length;
-      var keep = v.daysLeft > 0 ? Math.max(0, v.perDay - doneToday - inHand) : 0;   // what they can still call today stays with them
-      if (fresh.length > keep) spare[ph] = fresh.slice(keep);
+      if (fresh.length) spare[ph] = fresh;
     });
     Object.keys(spare).sort(function (a, b) { return spare[b].length - spare[a].length; })
       .forEach(function (k) { out = out.concat(spare[k]); });

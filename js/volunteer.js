@@ -189,6 +189,7 @@
     var left = st.today.target - st.today.done;
     $('#progTitle').textContent = cv.notStarted ? dayOneText(cv.startDate)
       : st.over ? 'Karma Sadhana period complete 🙏'
+      : st.poolEmpty && !st.inHand.length ? 'Everyone in the list has been reached 🌸'
       : left > 0 ? 'Let’s become a mother to ' + left + (left === 1 ? ' person' : ' people') + ' today 🌸'
       : left === 0 ? "Today's target done! 🌸" : 'Extra mile: +' + (-left) + ' ✨';
     var total = C.CAMPAIGN_START_DATE && C.CAMPAIGN_END_DATE ? daysBetween(C.CAMPAIGN_START_DATE, C.CAMPAIGN_END_DATE) + 1 : 0;
@@ -196,7 +197,8 @@
     $('#progSub').textContent = (!cv.notStarted && dayNo > 0 && total ? 'Day ' + dayNo + ' of ' + total : '') +
       (!S.isWA && st.today.dials > st.today.done ? (dayNo > 0 ? ' · ' : '') + st.today.dials + ' dials today' : '');
     var tl = Math.max(0, st.today.target - st.today.done);
-    $('#todayLeft').textContent = cv.notStarted || st.over ? '' : tl ? tl + ' left today' : 'Today done ✅';
+    var listDone = st.poolEmpty && !st.inHand.length;   // nobody left to give: don't ask for more calls
+    $('#todayLeft').textContent = cv.notStarted || st.over ? '' : listDone ? 'Nobody left to call 🌸' : tl ? tl + ' left today' : 'Today done ✅';
     $('#myLeft').textContent = (st.left || 0) + ' left in your list';
     var cp = st.camp || { total: 0, done: 0 };
     $('#campFill').style.width = (cp.total ? 100 * cp.done / cp.total : 0) + '%';
@@ -205,7 +207,7 @@
     var r = st.stats.reached || 0;
     $('#myTotal').textContent = r ? 'You’ve offered this possibility to ' + r + (r === 1 ? ' person' : ' people') + ' 🙏' : 'Your first offering awaits 🙏';
     var pend = st.today.pending || 0, dl = cv.daysLeft || 0, x = dl ? Math.ceil(pend / dl) : 0;
-    $('#catchUp').textContent = !pend || cv.notStarted || st.over ? ''
+    $('#catchUp').textContent = !pend || cv.notStarted || st.over || listDone ? ''
       : 'You have ' + pend + ' pending ' + W(pend) + ' from earlier days 🌱 ' +
         (pend <= dl ? 'Just 1 extra ' + W(1) + ' a day for ' + pend + (pend === 1 ? ' day' : ' days') + ' will catch you up.'
                     : x + ' extra ' + W(x) + ' a day for the remaining ' + dl + ' days will catch you up.');
