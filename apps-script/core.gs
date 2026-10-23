@@ -153,6 +153,15 @@ function createCore(store, camp) {
     return s;
   }
 
+  // calls owed from earlier days: from the caller's real first day (added mid-campaign = later start) until yesterday
+  function pendingOf(c, cv, mine, today) {
+    var created = c.createdAt ? istDay(c.createdAt) : '', first = cv.startDate > created ? cv.startDate : created;
+    var lastPast = c.endDate && c.endDate < today ? addDays(c.endDate, 1) : today;
+    var pastDays = first && first < lastPast ? daysBetween(first, lastPast) : 0;
+    var doneBefore = mine.filter(function (l) { return isCall(l) && istDay(l.ts) < today && counted(l.status); }).length;
+    return cv.active ? Math.max(0, pastDays * cv.perDay - doneBefore) : 0;
+  }
+
   function state(p) {
     var c = findCaller(p.phone);
     if (!c) throw new Error('This number is not registered in this campaign. Please contact the admin.');
@@ -161,19 +170,15 @@ function createCore(store, camp) {
     var mine = log.filter(function (l) { return normPhone(l.callerPhone) === phone; });
     var todayMine = mine.filter(function (l) { return isCall(l) && istDay(l.ts) === today; });
     var done = todayMine.filter(function (l) { return counted(l.status); }).length;
-    // calls owed from earlier days: from the caller's real first day (added mid-campaign = later start) until yesterday
-    var created = c.createdAt ? istDay(c.createdAt) : '', first = cv.startDate > created ? cv.startDate : created;
-    var lastPast = c.endDate && c.endDate < today ? addDays(c.endDate, 1) : today;
-    var pastDays = first && first < lastPast ? daysBetween(first, lastPast) : 0;
-    var doneBefore = mine.filter(function (l) { return isCall(l) && istDay(l.ts) < today && counted(l.status); }).length;
-    var pending = cv.active ? Math.max(0, pastDays * cv.perDay - doneBefore) : 0;
+    var pending = pendingOf(c, cv, mine, today);
     var contacts = store.all('Contacts');
     var inHand = contacts.filter(function (x) { return normPhone(x.assignedTo) === phone; });
     var over = !cv.active || cv.daysLeft <= 0, poolEmpty = false;
 
     // keep the NEXT person ready too, so the volunteer's screen moves on instantly after each save
     var want = 2;
-    var room = function () { return done + inHand.length < cv.perDay || (p.extra && !inHand.length); };
+    // today's calls plus any pending from earlier days can be made today
+    var room = function () { return done + inHand.length < cv.perDay + pending || (p.extra && !inHand.length); };
     if (inHand.length < want && !over && !cv.notStarted && room()) {
       var cands = contacts.filter(function (x) { return eligible(x, phone); });
       cands.sort(function (a, b) { return rank(a, phone) - rank(b, phone) || a._i - b._i; });
@@ -222,17 +227,16 @@ function createCore(store, camp) {
     if (!contact) throw new Error('Contact not found');
     if (normPhone(contact.assignedTo) !== phone && normPhone(contact.calledBy) !== phone)
       throw new Error('This contact is no longer assigned to you');
-    var today = istDay();
-    var done = store.all('Log').filter(function (l) {
-      return isCall(l) && normPhone(l.callerPhone) === phone && istDay(l.ts) === today && counted(l.status);
-    }).length;
+    var today = istDay(), mineLog = store.all('Log').filter(function (l) { return normPhone(l.callerPhone) === phone; });
+    var done = mineLog.filter(function (l) { return isCall(l) && istDay(l.ts) === today && counted(l.status); }).length;
+    var pending = pendingOf(c, cv, mineLog, today);
     // Already reached earlier (any result except "Didn't receive") = just an update, not a call
     var isUpdate = !!contact.status && counted(contact.status);
     var milestone = isUpdate ? 'update' : '';
     if (isUpdate && contact.status === p.status && !p.notes) { var same = state({ phone: phone }); same.saved = p.status; return same; }   // nothing changed
     if (!isUpdate && counted(p.status)) {
       if (done + 1 === cv.perDay) milestone = 'target';
-      else if (done + 1 > cv.perDay) milestone = 'extra';
+      else if (done + 1 > cv.perDay + pending) milestone = 'extra';   // catching up pending calls is not "extra"
     }
     contact.status = p.status;
     if (!isUpdate) contact.attempts = (Number(contact.attempts) || 0) + 1;
@@ -514,6 +518,7 @@ function saveCampaign(store, p) {
     all.forEach(function (x) { var n = parseInt(String(x.id).replace(/\D/g, ''), 10); if (n > max) max = n; });
     row = { id: 'K' + (max + 1), type: p.type === 'whatsapp' ? 'whatsapp' : 'call', createdAt: new Date().toISOString(), active: 'true', createdBy: p._adminName || '' };
   }
+  var oldEnd = row.endDate ? istDay(row.endDate) : '';
   row.name = name; row.startDate = p.startDate; row.endDate = p.endDate;
   row.perDay = Number(p.perDay) || (row.type === 'whatsapp' ? 30 : 2);
   row.message = String(p.message || ''); row.introDate = p.introDate || ''; row.introTime = p.introTime || '';
@@ -521,11 +526,21 @@ function saveCampaign(store, p) {
   if (typeof p.nudgeDone === 'string') row.nudgeDone = p.nudgeDone;
   if (p.active !== undefined) row.active = String(p.active);
   if (isNew) store.insert('Campaigns', row); else store.update('Campaigns', row);
+  if (!isNew && oldEnd && p.endDate > oldEnd) {   // campaign extended: every active volunteer gets the extra days too
+    var sc = scoped(store, row.id), n = 0;
+    sc.all('Callers').forEach(function (v) {
+      var e = String(v.endDate || ''); if (e.length > 10) e = istDay(e);
+      if (String(v.active) !== 'false' && (!e || e < p.endDate)) { v.endDate = p.endDate; sc.update('Callers', v); n++; }
+    });
+    if (n) createCore(sc, campaignView(row)).syncAll();
+    row._extended = n;
+  }
   if (isNew && p.volunteers && p.volunteers.length) {   // existing volunteers picked while creating; contacts come with the upload
     var core = createCore(scoped(store, row.id), campaignView(row));
     p.volunteers.forEach(function (v) { core.saveCaller({ name: v.name, phone: v.phone, startDate: row.startDate, skipAssign: true, _adminName: p._adminName }); });
   }
-  return campaignView(row);
+  var out = campaignView(row); if (row._extended) out.extended = row._extended;
+  return out;
 }
 // A volunteer's name / number is kept per campaign: when the admin edits it in one campaign, update every other campaign too
 function syncVolunteerElsewhere(store, campId, p) {
